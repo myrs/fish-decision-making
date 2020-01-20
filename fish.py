@@ -1,5 +1,7 @@
-from p5 import Vector, stroke, circle
 import numpy as np
+
+from math import degrees
+from p5 import Vector, stroke, circle
 
 
 class Fish():
@@ -36,7 +38,7 @@ class Fish():
 
         return angle
 
-    def get_turning_angle(self):
+    def get_turning_angle_for_neighbor(self):
         """calculate turning angle in rads/second"""
         # get angle
         angle = self.get_angle_with_neighbor()
@@ -61,7 +63,7 @@ class Fish():
         neighbor_in_front = angle > -np.pi / 2 and angle < np.pi / 2
 
         # default acceleration is 0
-        # acceleration = 0
+        acceleration = 0
 
         # if angle is between -0.194 to 0.194 - it's a dead zone for acceleration
         if angle > 0.194 or angle < -0.194:
@@ -126,7 +128,7 @@ class Fish():
         # TODO - add random movement?
         # when fish has no effect of other neighbors
 
-        # self.set_closest_neighbor(fishes)
+        self.set_closest_neighbor(fishes)
 
         # standard acceleration depends on velocity (Fig. 2.D)
         # as -0.24x + 1.54
@@ -134,32 +136,24 @@ class Fish():
 
 
         # get turning angle
-        # turning_angle = self.get_turning_angle()
+        turning_angle = self.get_turning_angle_for_neighbor()
         # get acceleration
-        # neighbor_acceleration = self.get_acceleration_for_neighbor()
+        neighbor_acceleration = self.get_acceleration_for_neighbor()
         walls_acceleration = self.get_walls_acceleration()
 
         # acceleration is a sum of accelerations influenced
         # by neighbor and by walls
-        # acceleration = standard_acceleration + neighbor_acceleration + walls_acceleration
-        acceleration = walls_acceleration + standard_acceleration 
+        acceleration = standard_acceleration + neighbor_acceleration + walls_acceleration
 
         # change fish direction,
         # rotating velocity vector by the turning angle
         # (changes the object itself, returns None)
-        # self.velocity.rotate(turning_angle)
+        self.velocity.rotate(turning_angle)
 
         # change fish speed,
         # accelerating fish
         # find neighbor_acceleration vector
         self.velocity = self.velocity + self.velocity * acceleration / self.velocity.magnitude
-
-        # TODO Rotation from wall after behaviour update?
-        wall_rotation = self.get_wall_rotation()
-        self.velocity.rotate(wall_rotation)  
-        if wall_rotation:
-            print('self.velocity')
-            print(self.velocity)   
 
         # validate, that velocity has not passed the limit
         if self.velocity.magnitude > self.max_speed:
@@ -167,10 +161,9 @@ class Fish():
 
         self.position += self.velocity
 
-
-        # print(self.velocity)
-
-        # self.ensure_in_bounds()
+        # after all updates are finished, ensure fish did not go out of edge
+        # and adjust if necessary 
+        self.bounce_from_edge()
 
     def show(self):
         stroke(255)
@@ -192,136 +185,125 @@ class Fish():
 
         self.closest_neighbor = closest
 
-        # self.closest_neighbor = min(
-        # fishes, key=lambda f: np.linalg.norm(f.position - self.position))
-
     def reflect(self, vector):
         return vector - 2 * Vector(*vector.dot(self.edge_vector) * self.edge_vector)
 
     def get_walls_acceleration(self):
         walls_acceleration = 0
+        distance = 15
+
+        edge_vector = self.get_edge_vector(distance=distance)
+        angle = edge_vector.angle_between(self.velocity)
+
         # close to the wall
-
-        edge_vector = self.get_edge_vector(delta=0, add_rotation=False)
-        angle = self.velocity.angle - edge_vector.angle
-
-        distance = self.velocity.distance(edge_vector)
-        # if angle < 0.5 or angle > np.pi - 0.5 and distance < 15:
-        # if angle < 0.5 and distance < 15:
-        #     print('acceleration from wall')
-        #     walls_acceleration = 1
-        # else:
-        #     print('decelerate')
-        #     walls_acceleration = -0.5
-
-
-        # # if fish is close to the wall
-        # if self.position.x - delta < 0:
-        #         or self.position.x + delta > self.width \
-        #         or self.position.y - delta < 0 \
-        #         or self.position.y + delta > self.height:
-        #     print('decelerate')
-        #     # 
-        #     walls_acceleration = -0.5
+        if edge_vector.magnitude:
+            # is in "escaping the wall" mode
+            # when angle between fish and wall is small
+            if np.pi / 2 - np.pi / 6 < angle < np.pi / 2 + np.pi / 6:
+                walls_acceleration = 1
+            # is approaching the wall
+            else:
+                walls_acceleration = -0.5
 
         return walls_acceleration
 
-    def get_edge_vector(self, delta=0, add_rotation=True):
+    def get_edge_vector(self, distance=15):
         edge_vector = Vector(*np.zeros(2))
 
-        # bounce from left wall
-        if self.position.x - delta <= 0:
-            self.position.x = 0
+        # close to the left wall
+        if self.position.x - distance <= 0:
             edge_vector.x = 1
-            # add a little rotation to avoid wall
-            # if add_rotation:
-            #     edge_vector.x += 0.1
 
-        # bounce from right wall
-        elif self.position.x + delta >= self.width:
-            self.position.x = self.width
-            edge_vector.x = -1
-            # if add_rotation:
-            #     edge_vector.x += -0.1
-
-        # bounce from bottom wall
-        if self.position.y - delta <= 0:
-            self.position.y = 0
-            edge_vector.y = 1
-            # if add_rotation:
-            #     edge_vector.y += 0.1
-
-        # bounce from top wall
-        elif self.position.y + delta >= self.height:
-            self.position.y = self.height
+        # close to the !top wall
+        if self.position.y - distance <= 0:
             edge_vector.y = -1
-            # if add_rotation:
-            #     edge_vector.y += -0.1
+
+        # close to the right wall
+        elif self.position.x + distance >= self.width:
+            edge_vector.x = -1
+
+        # close to the !bottom wall
+        elif self.position.y + distance >= self.height:
+            edge_vector.y = 1
 
         return edge_vector
 
-    def get_wall_rotation(self):
-        wall_rotation = 0
-        edge_vector = self.get_edge_vector()
+    def bounce_from_edge(self):
+        bounce_vector = Vector(0, 0)
+        # random between 0.1 and 0.2
+        # bigger - fish spend less time close to the wall
+        separation = 0.15
+        variance = 0.15
+        bounce_factor = np.random.random() * separation + variance
 
+        corner_delta = 10
 
-        # set rotation if close to edge
-        if edge_vector.magnitude:
-            print('Uebalas!!')
-            print(self.position)
-            print(edge_vector)
-            # rotation is angle between edge vector and velocity
-            # wall_rotation = edge_vector.angle - self.velocity.angle
-            angle_with_vector = edge_vector.angle - self.velocity.angle
-            
-            if angle_with_vector > np.pi or angle_with_vector < -np.pi:
-                wall_rotation = -np.pi / 2 - 0.15
+        # bottom! wall
+        if self.position.y > self.height:
+            self.position.y = self.height
+            bounce_vector.y += -bounce_factor
+            # vector heading down
+            top_vector = Vector(0, -1)
+            angle = top_vector.angle - self.velocity.angle
+            if angle < -np.pi:
+                bounce_vector.x += -1
             else:
-                wall_rotation = np.pi / 2 + 0.15
+                bounce_vector.x += 1
 
-            # wall_rotation = edge_vector.angle - self.velocity.angle
-            print(wall_rotation)
+            # reverse if close to x
+            if self.position.x - corner_delta < 0 or self.position.x + corner_delta > self.width:
+                # print('reverse!')
+                bounce_vector.x = -bounce_vector.x                
 
-        return wall_rotation
-
-    def ensure_in_bounds(self):
-        # bounce from left wall
-        if self.position.x <= 0:
-            self.position.x = 0
-
-        # bounce from right wall
-        elif self.position.x > self.width:
+        # right wall
+        if self.position.x > self.width:
             self.position.x = self.width
+            bounce_vector.x += -bounce_factor
+            # vector heading down
+            right_vector = Vector(-1, 0)
+            angle = right_vector.angle - self.velocity.angle
+            if angle > np.pi:
+                bounce_vector.y += -1
+            else:
+                bounce_vector.y += 1
 
-        # bounce from bottom wall
+        # top! wall
         if self.position.y < 0:
             self.position.y = 0
+            bounce_vector.y += bounce_factor
+            # vector heading down
+            bottom_vector = Vector(0, 1)
+            angle = bottom_vector.angle - self.velocity.angle
+            # print('angle')
+            # print(angle)
 
-        # bounce from top wall
-        elif self.position.y > self.height:
-            self.position.y = self.height
+            if angle < np.pi:
+                bounce_vector.x += 1
+            else:
+                bounce_vector.x += -1
 
-    # def bounce_from_edge_2(self):
-    #     if self.position.x > self.width:
-    #         self.position.x = 0
-    #     elif self.position.x < 0:
-    #         self.position.x = self.width
+            # reverse if close to x
+            if self.position.x - corner_delta < 0 or self.position.x + corner_delta > self.width:
+                # print('reverse!')
+                bounce_vector.x = -bounce_vector.x  
 
-    #     if self.position.y > self.height:
-    #         self.position.y = 0
-    #     elif self.position.y < 0:
-    #         self.position.y = self.height
+        # left wall
+        if self.position.x < 0:
+            self.position.x = 0
+            bounce_vector.x += bounce_factor
+            # vector heading down
+            left_vector = Vector(1, 0)
+            angle = left_vector.angle - self.velocity.angle
+            if angle > 0:
+                bounce_vector.y += -1
+            else:
+                bounce_vector.y += 1
 
-        # return False
-
-    # def bounce_from_edge(self):
-    #     self.calculate_edge_vector()
-
-    #     # edge vector is not 0 zero vector
-    #     if self.edge_vector.magnitude:
-    #         # fish should just "reflect from wall"
-    #         self.velocity = self.reflect(self.velocity)
-
-    #         return True
-
-    #     return False
+        # bounce if there is edge vector
+        if bounce_vector.magnitude:
+            rotation = bounce_vector.angle - self.velocity.angle 
+            # print('bounce_vector')
+            # print(bounce_vector)
+            # print('rotate!')
+            # print(degrees(rotation))
+            self.velocity.rotate(rotation)
