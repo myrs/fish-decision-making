@@ -7,9 +7,11 @@ from fish import Fish
 # height = 200
 width = 800
 height = 800
+# width = 300
+# height = 300
 
 fishes = [Fish(np.random.random() * width, np.random.random() * height,
-               width, height) for _ in range(18)]
+               width, height) for _ in range(1)]
 
 
 def setup():

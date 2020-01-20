@@ -47,7 +47,7 @@ class Fish():
 
         return result
 
-    def get_acceleration(self):
+    def get_acceleration_for_neighbor(self):
         """calculate acceleration defined by the closes neighbor"""
         # first, get distance to the closes neighbor
         # distance_to_neighbor = np.linalg.norm(
@@ -60,16 +60,12 @@ class Fish():
         # neighbor is in front when angle is between -pi/2 and pi/2
         neighbor_in_front = angle > -np.pi / 2 and angle < np.pi / 2
 
-        # standard acceleration depends on velocity (Fig. 2.D)
-        # as -0.24x + 1.54
-        acceleration = -0.24 * self.velocity.magnitude + 1.54
-
         # default acceleration is 0
         # acceleration = 0
 
         # if angle is between -0.194 to 0.194 - it's a dead zone for acceleration
         if angle > 0.194 or angle < -0.194:
-        # if True:
+            # if True:
             # cases:
             # 1. Strong attraction
             # -- when fish closer than 23.5 centimeters
@@ -81,15 +77,17 @@ class Fish():
             y0 = self.position.y
 
             is_close_enough = False
-            
+
             # x is a position of fish to test
             # it should lie inside y = +- solution
             x = self.closest_neighbor.position.x
             y = self.closest_neighbor.position.y
-            
+
             try:
-                y1 = 0.1 * (10 * y0 - 7 * np.sqrt(-1 * (x0 ** 2) + 2 * x0 * x - x ** 2 + 729))
-                y2 = 0.1 * (10 * y0 + 7 * np.sqrt(-1 * (x0 ** 2) + 2 * x0 * x - x ** 2 + 729))
+                y1 = 0.1 * (10 * y0 - 7 * np.sqrt(-1 *
+                                                  (x0 ** 2) + 2 * x0 * x - x ** 2 + 729))
+                y2 = 0.1 * (10 * y0 + 7 * np.sqrt(-1 *
+                                                  (x0 ** 2) + 2 * x0 * x - x ** 2 + 729))
 
                 top = y1 if y1 >= y2 else y2
                 bottom = y1 if y1 < y2 else y2
@@ -113,7 +111,7 @@ class Fish():
             elif distance_to_neighbor < 4.06:
                 if neighbor_in_front:
                     acceleration = -0.8
-                
+
                 # accelerate a little bit if there's someone directly behind us
                 else:
                     acceleration = 0.4
@@ -128,34 +126,51 @@ class Fish():
         # TODO - add random movement?
         # when fish has no effect of other neighbors
 
-        self.set_closest_neighbor(fishes)
+        # self.set_closest_neighbor(fishes)
 
-        # if not self.bounce_from_edge():
-        if not self.bounce_from_edge_2():
-            # get turning angle
-            turning_angle = self.get_turning_angle()
-            # get acceleration
-            acceleration = self.get_acceleration()
+        # standard acceleration depends on velocity (Fig. 2.D)
+        # as -0.24x + 1.54
+        standard_acceleration = -0.24 * self.velocity.magnitude + 1.54
 
-            # change fish direction,
-            # rotating velocity vector by the turning angle
-            # (changes the object itself, returns None)
-            self.velocity.rotate(turning_angle)
 
-            # change fish speed,
-            # accelerating fish
-            # find acceleration vector
-            self.velocity = self.velocity + self.velocity * acceleration / self.velocity.magnitude
+        # get turning angle
+        # turning_angle = self.get_turning_angle()
+        # get acceleration
+        # neighbor_acceleration = self.get_acceleration_for_neighbor()
+        walls_acceleration = self.get_walls_acceleration()
 
-        else:
-            pass
-            # TODO here should be the logic for bouncing from wall!
+        # acceleration is a sum of accelerations influenced
+        # by neighbor and by walls
+        # acceleration = standard_acceleration + neighbor_acceleration + walls_acceleration
+        acceleration = walls_acceleration + standard_acceleration 
+
+        # change fish direction,
+        # rotating velocity vector by the turning angle
+        # (changes the object itself, returns None)
+        # self.velocity.rotate(turning_angle)
+
+        # change fish speed,
+        # accelerating fish
+        # find neighbor_acceleration vector
+        self.velocity = self.velocity + self.velocity * acceleration / self.velocity.magnitude
+
+        # TODO Rotation from wall after behaviour update?
+        wall_rotation = self.get_wall_rotation()
+        self.velocity.rotate(wall_rotation)  
+        if wall_rotation:
+            print('self.velocity')
+            print(self.velocity)   
 
         # validate, that velocity has not passed the limit
         if self.velocity.magnitude > self.max_speed:
-            self.velocity = self.max_speed * self.velocity / self.velocity.magnitude 
+            self.velocity = self.max_speed * self.velocity / self.velocity.magnitude
 
         self.position += self.velocity
+
+
+        # print(self.velocity)
+
+        # self.ensure_in_bounds()
 
     def show(self):
         stroke(255)
@@ -178,60 +193,135 @@ class Fish():
         self.closest_neighbor = closest
 
         # self.closest_neighbor = min(
-            # fishes, key=lambda f: np.linalg.norm(f.position - self.position))
+        # fishes, key=lambda f: np.linalg.norm(f.position - self.position))
 
     def reflect(self, vector):
         return vector - 2 * Vector(*vector.dot(self.edge_vector) * self.edge_vector)
 
-    def calculate_edge_vector(self):
-        delta = 0
+    def get_walls_acceleration(self):
+        walls_acceleration = 0
+        # close to the wall
+
+        edge_vector = self.get_edge_vector(delta=0, add_rotation=False)
+        angle = self.velocity.angle - edge_vector.angle
+
+        distance = self.velocity.distance(edge_vector)
+        # if angle < 0.5 or angle > np.pi - 0.5 and distance < 15:
+        # if angle < 0.5 and distance < 15:
+        #     print('acceleration from wall')
+        #     walls_acceleration = 1
+        # else:
+        #     print('decelerate')
+        #     walls_acceleration = -0.5
+
+
+        # # if fish is close to the wall
+        # if self.position.x - delta < 0:
+        #         or self.position.x + delta > self.width \
+        #         or self.position.y - delta < 0 \
+        #         or self.position.y + delta > self.height:
+        #     print('decelerate')
+        #     # 
+        #     walls_acceleration = -0.5
+
+        return walls_acceleration
+
+    def get_edge_vector(self, delta=0, add_rotation=True):
         edge_vector = Vector(*np.zeros(2))
 
         # bounce from left wall
-        if self.position.x < 0 + delta:
+        if self.position.x - delta <= 0:
             self.position.x = 0
             edge_vector.x = 1
+            # add a little rotation to avoid wall
+            # if add_rotation:
+            #     edge_vector.x += 0.1
 
         # bounce from right wall
-        elif self.position.x > self.width - delta:
+        elif self.position.x + delta >= self.width:
             self.position.x = self.width
             edge_vector.x = -1
+            # if add_rotation:
+            #     edge_vector.x += -0.1
 
         # bounce from bottom wall
-        if self.position.y < 0 + delta:
+        if self.position.y - delta <= 0:
             self.position.y = 0
             edge_vector.y = 1
+            # if add_rotation:
+            #     edge_vector.y += 0.1
 
         # bounce from top wall
-        elif self.position.y > self.height - delta:
+        elif self.position.y + delta >= self.height:
             self.position.y = self.height
             edge_vector.y = -1
+            # if add_rotation:
+            #     edge_vector.y += -0.1
 
-        self.edge_vector = edge_vector
+        return edge_vector
 
-    def bounce_from_edge(self):
-        self.calculate_edge_vector()
-
-        # edge vector is not 0 zero vector
-        if self.edge_vector.magnitude:
-            # fish should just "reflect from wall"
-            self.velocity = self.reflect(self.velocity)
-
-            return True
-
-        return False
+    def get_wall_rotation(self):
+        wall_rotation = 0
+        edge_vector = self.get_edge_vector()
 
 
-    def bounce_from_edge_2(self):
-        if self.position.x > self.width:
+        # set rotation if close to edge
+        if edge_vector.magnitude:
+            print('Uebalas!!')
+            print(self.position)
+            print(edge_vector)
+            # rotation is angle between edge vector and velocity
+            # wall_rotation = edge_vector.angle - self.velocity.angle
+            angle_with_vector = edge_vector.angle - self.velocity.angle
+            
+            if angle_with_vector > np.pi or angle_with_vector < -np.pi:
+                wall_rotation = -np.pi / 2 - 0.15
+            else:
+                wall_rotation = np.pi / 2 + 0.15
+
+            # wall_rotation = edge_vector.angle - self.velocity.angle
+            print(wall_rotation)
+
+        return wall_rotation
+
+    def ensure_in_bounds(self):
+        # bounce from left wall
+        if self.position.x <= 0:
             self.position.x = 0
-        elif self.position.x < 0:
+
+        # bounce from right wall
+        elif self.position.x > self.width:
             self.position.x = self.width
 
-        if self.position.y > self.height:
+        # bounce from bottom wall
+        if self.position.y < 0:
             self.position.y = 0
-        elif self.position.y < 0:
+
+        # bounce from top wall
+        elif self.position.y > self.height:
             self.position.y = self.height
 
-        return False
+    # def bounce_from_edge_2(self):
+    #     if self.position.x > self.width:
+    #         self.position.x = 0
+    #     elif self.position.x < 0:
+    #         self.position.x = self.width
 
+    #     if self.position.y > self.height:
+    #         self.position.y = 0
+    #     elif self.position.y < 0:
+    #         self.position.y = self.height
+
+        # return False
+
+    # def bounce_from_edge(self):
+    #     self.calculate_edge_vector()
+
+    #     # edge vector is not 0 zero vector
+    #     if self.edge_vector.magnitude:
+    #         # fish should just "reflect from wall"
+    #         self.velocity = self.reflect(self.velocity)
+
+    #         return True
+
+    #     return False
