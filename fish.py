@@ -103,13 +103,14 @@ class Fish():
             if is_close_enough and distance_to_neighbor > 7.9:
                 # 1.1. If neighbor in front - accelerate towards it
                 if neighbor_in_front:
-                    acceleration = 2
+                    # acceleration = 2
+                    acceleration = random_trunc(mean=2.2, sd=0.3, low=1, upp=3)
 
                 # 1.1. If neighbor in behind - decelerate
                 else:
-                    print('decelerate')
-                    acceleration = -1.2
-                    # acceleration = -0.8
+                    # print('decelerate')
+                    # acceleration = -1.2
+                    acceleration = random_trunc(mean=-1.2, sd=0.2, low=-1.8, upp=-0.8)
 
             # 2. Strong repulsion (when fish closer than 4.06 centimeters)
             elif distance_to_neighbor < 4.06:
@@ -118,7 +119,9 @@ class Fish():
 
                 # accelerate a little bit if there's someone directly behind us
                 else:
-                    acceleration = 0.4
+                    # pass
+                    # acceleration = 0.4
+                    acceleration = random_trunc(mean=0.4, sd=0.1, low=0.1, upp=0.8)
 
         # 3. When fish is between 4.06 and 7.9 - do nothing
         # TODO maybe some random stuff??
@@ -235,9 +238,9 @@ class Fish():
         bounce_vector = Vector(0, 0)
         # random between 0.1 and 0.2
         # bigger - fish spend less time close to the wall
-        separation = 0.15
-        variance = 0.15
-        bounce_factor = np.random.random() * separation + variance
+        # separation = 0.15
+        # variance = 0.15
+        bounce_factor = random_trunc(mean=0.2, sd=0.1, low=0.1, upp=0.4)
 
         corner_delta = 10
 
