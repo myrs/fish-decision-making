@@ -2,6 +2,7 @@ import numpy as np
 
 from math import degrees
 from p5 import Vector, stroke, circle
+from utils import random_trunc
 
 
 class Fish():
@@ -32,9 +33,9 @@ class Fish():
         # ensure angle is always less, than pi to make
         # future calculations right
         if angle > np.pi:
-            angle -= np.pi
+            angle -= 2 * np.pi
         elif angle < -np.pi:
-            angle += np.pi
+            angle += 2 * np.pi
 
         return angle
 
@@ -67,7 +68,7 @@ class Fish():
 
         # if angle is between -0.194 to 0.194 - it's a dead zone for acceleration
         if angle > 0.194 or angle < -0.194:
-            # if True:
+        # if True:
             # cases:
             # 1. Strong attraction
             # -- when fish closer than 23.5 centimeters
@@ -106,6 +107,7 @@ class Fish():
 
                 # 1.1. If neighbor in behind - decelerate
                 else:
+                    print('decelerate')
                     acceleration = -1.2
                     # acceleration = -0.8
 
@@ -200,7 +202,8 @@ class Fish():
             # is in "escaping the wall" mode
             # when angle between fish and wall is small
             if np.pi / 2 - np.pi / 6 < angle < np.pi / 2 + np.pi / 6:
-                walls_acceleration = 1
+                walls_acceleration = random_trunc(mean=1.5, sd=0.5, low=0, upp=3)
+                # walls_acceleration = 1
             # is approaching the wall
             else:
                 walls_acceleration = -0.5
