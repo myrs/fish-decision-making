@@ -16,8 +16,8 @@ class Fish():
         self.reached_shaded_area = False
         self.shaded_area_x = shaded_area_x
 
-        self.second_neighbour_turn_coefficient = 0.2
-        self.second_neighbour_accelerate_coefficient = 0.2
+        self.second_neighbor_turn_coefficient = 0.2
+        self.second_neighbor_accelerate_coefficient = 0.2
 
         self.rest_counter = 0
 
@@ -95,7 +95,7 @@ class Fish():
         # get turning angle
         turning_angle_closest = self.get_turning_angle_for_neighbor(self.first_closest)
         turning_angle_2nd_closest = self.get_turning_angle_for_neighbor(
-            self.second_closest, coefficient=self.second_neighbour_turn_coefficient)
+            self.second_closest, coefficient=self.second_neighbor_turn_coefficient)
 
         # turning_angle = turning_angle_closest
         turning_angle = turning_angle_closest + turning_angle_2nd_closest
@@ -122,7 +122,7 @@ class Fish():
         neighbor_acceleration_closest = self.get_acceleration_for_neighbor(
             self.first_closest)
         neighbor_acceleration_2nd_closest = self.get_acceleration_for_neighbor(
-            self.second_closest, coefficient=self.second_neighbour_accelerate_coefficient)
+            self.second_closest, coefficient=self.second_neighbor_accelerate_coefficient)
 
         # this is not very exact, as acceleration should have directions?
         neighbor_acceleration = neighbor_acceleration_closest + neighbor_acceleration_2nd_closest
@@ -204,11 +204,11 @@ class Fish():
         angle = angle_to - ange_from
         return self.normalize_angle(angle)
 
-    def get_angle_with_neighbor(self):
+    def get_angle_with_neighbor(self, neighbor):
         """calculates angle between fish and it's closest neighbor"""
         # first, calculate vector, pointing to the closes fish
         # it's a vector, connecting both fish positions
-        direction_to_neighbor = self.first_closest.position - self.position
+        direction_to_neighbor = neighbor.position - self.position
         # calculate angle as angle between fish velocity vector and
         # the direction to the neighbor
         # the angle need to be negative to rotate
@@ -229,21 +229,21 @@ class Fish():
         return turning_angle
 
 
-    def get_turning_angle_for_neighbor(self, neighbour, coefficient=1.0):
+    def get_turning_angle_for_neighbor(self, neighbor, coefficient=1.0):
         """calculate turning angle in rads/second"""
         # get angle
-        if neighbour is None:
+        if neighbor is None:
             return 0
 
-        angle = self.get_angle_with_neighbor()
+        angle = self.get_angle_with_neighbor(neighbor)
         turning_angle = 0
 
-        # print(self.position.distance(neighbour.position))
+        # print(self.position.distance(neighbor.position))
 
         # set to 60
-        if self.position.distance(neighbour.position) < 100:
+        if self.position.distance(neighbor.position) < 100:
             turning_angle = self.get_turning_angle(angle)
-            if self.position.distance(neighbour.position) > 60:
+            if self.position.distance(neighbor.position) > 60:
                 # half strength if fish is far away
                 turning_angle * 0.5
 
@@ -261,9 +261,14 @@ class Fish():
         distance_to_neighbor = self.position.distance(neighbor.position)
 
         # get angle with the neighbor
-        angle = self.get_angle_with_neighbor()
-        # neighbor is in front when angle is between -pi/2 and pi/2
-        neighbor_in_front = angle > -np.pi / 2 and angle < np.pi / 2
+        angle = self.get_angle_with_neighbor(neighbor)
+
+        if angle > 0 and angle < np.pi / 2 \
+            or angle < 0 and angle > -np.pi /2:
+            neighbor_in_front = True
+        else:
+            neighbor_in_front = False
+
         # neighbor_in_front = not neighbor_in_front
 
         # default acceleration is 0
