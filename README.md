@@ -20,16 +20,28 @@ to install python libraries, used in this project.
 ### Installing glfw
 `p5` library, used to visualize the simulations, depends on `glfw`. Detailed installation instructions depending on your operating system can be found [here](https://p5.readthedocs.io/en/latest/install.html).
 
-## Running simulations
-To run simulation with basic parameters, run 
+## Running simulations with UI
+To run simulation with basic parameters (2 fishes, no replicas), run 
 ```python3 main.py```
 
 The following parameters can be used:
 ```
---max-steps \\ max steps to run simulation
+-f (--fishes) - number of fishes
+-r (--replicas) - number of replicas
 ```
-To run with parameter just specify them in command using suitable values, e.g.:
+To run with parameters, specify them in command line e.g.:
 
 ```
-python3 main.py --max-steps=2000
+python3 main.py --fishes=4 --replicas=2 \\ run with 4 fishes and 2 replicas
+python3 main.py --fishes=8 \\ run with 8 fishes (2 replicas will be set by default)
 ```
+
+## Running simulations from python console
+You can use `python` (or `ipython`) to run simulation from console
+
+In this case UI will not be triggered, simulations run faster and finish when all fishes make their decisions
+
+Function `main.headless_simulation` receives two key parameters: `fishes` and `replicas`. It returns a tuple with number of fishes, that selected top and fishes, that selected bottom.
+
+Function `main.headless_simulations` receives three key parameters: `shoals` (NB: the same as times simulation will run), `fishes` and `replicas`. 
+It returns a tuple, where each element corresponds to one shoal and it's value is a proportion of fishes, that went top.

@@ -188,6 +188,9 @@ class Fish():
     def get_turning_angle_for_neighbor(self, neighbour, coefficient=1.0):
         """calculate turning angle in rads/second"""
         # get angle
+        if neighbour is None:
+            return 0
+
         angle = self.get_angle_with_neighbor()
         result = 0
 
@@ -217,6 +220,8 @@ class Fish():
         # first, get distance to the closes neighbor
         # distance_to_neighbor = np.linalg.norm(
         # self.first_closest.position - self.position)
+        if neighbor is None:
+            return 0
 
         distance_to_neighbor = self.position.distance(neighbor.position)
 
@@ -260,6 +265,7 @@ class Fish():
 
                 is_close_enough = bottom < y < top
             except Exception:
+                print(y, top)
                 pass
 
             # if distance_to_neighbor <= 23.5 and distance_to_neighbor > 7.9:
