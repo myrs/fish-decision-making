@@ -9,6 +9,7 @@ class Fish():
 
     def __init__(self, x, y, width, height):
         self.position = Vector(x, y)
+        self.rest_counter = 0
 
         # random initial speed
         vec = (np.random.rand(2) - 0.5) * 10
@@ -53,8 +54,8 @@ class Fish():
         # TODO should we be that precise? maybe just 2 digits?
         result = 0.5091 * np.sin(0.9987 * angle + 0.0071) - 0.0519
 
-        # result = random_trunc(mean=result, sd=0.05, low=result - 0.1, upp=result + 0.1)
-        # result = self.normalize_angle(result)
+        result = random_trunc(mean=result, sd=0.2, low=result - 0.4, upp=result + 0.4)
+        result = self.normalize_angle(result)
         # result = 0.51 * np.sin(angle + 0.01) - 0.05
 
         return result
@@ -76,8 +77,8 @@ class Fish():
         acceleration = 0
 
         # if angle is between -0.194 to 0.194 - it's a dead zone for acceleration
-        # if angle > 0.194 or angle < -0.194:
-        if True:
+        if angle > 0.194 or angle < -0.194:
+        # if True:
             # cases:
             # 1. Strong attraction
             # -- when fish closer than 23.5 centimeters
@@ -113,7 +114,8 @@ class Fish():
                 # 1.1. If neighbor in front - accelerate towards it
                 if neighbor_in_front:
                     # print('acceleration far')
-                    # acceleration = 2
+                    # acceleration = 0
+                    # acceleration = 1
                     acceleration = random_trunc(mean=2.2, sd=0.3, low=1, upp=3.5)
 
                 # 1.1. If neighbor in behind - decelerate
@@ -121,12 +123,14 @@ class Fish():
                     # print('decelerate far')
                     # print('decelerate')
                     # acceleration = -1.2
+                    # acceleration = 0
                     acceleration = random_trunc(mean=-1.2, sd=0.2, low=-1.4, upp=-0.8)
 
             # 2. Strong repulsion (when fish closer than 4.06 centimeters)
             elif distance_to_neighbor < 4.06:
                 if neighbor_in_front:
                     # print('decelerate close')
+                    # acceleration = 0
                     acceleration = random_trunc(mean=-0.8, sd=0.4, low=-1.2, upp=-0.2)
                     # print(acceleration)
 
@@ -181,6 +185,17 @@ class Fish():
         # TODO - add random movement?
         # when fish has no effect of other neighbors
 
+        if np.random.random() > 0.99:
+            self.velocity = self.velocity.normalize()
+            self.rest_counter = int(np.random.random() * 20)
+            print(f'set rest counter to {self.rest_counter}')
+            # return
+
+        if self.rest_counter:
+            self.rest_counter -= 1
+            self.position += self.velocity
+            return
+
         self.set_closest_neighbor(fishes)
 
         # standard acceleration depends on velocity (Fig. 2.D)
@@ -190,6 +205,7 @@ class Fish():
         # get turning angle
         turning_angle = self.get_turning_angle_for_neighbor()
         # get acceleration
+        # neighbor_acceleration = 0
         neighbor_acceleration = self.get_acceleration_for_neighbor()
         walls_acceleration = self.get_walls_acceleration()
 
@@ -216,6 +232,8 @@ class Fish():
         # after all updates are finished, ensure fish did not go out of edge
         # and adjust if necessary
         self.bounce_from_edge()
+
+        self.bounce_from_obstacle()
 
     def show(self):
         stroke(255)
@@ -323,7 +341,7 @@ class Fish():
         # top is what we see in the top
         # but it should be less, than 0, as coordinate start from top left angle
         if y_top < y0 < y_bottom:
-            print('in triangle!')
+            # print('in triangle!')
             top_vector = Vector(0.35, -0.94)
             bottom_vector = Vector(0.35, 0.94)
 
@@ -339,9 +357,10 @@ class Fish():
             bounce_factor_angle = random_trunc(mean=0.1, sd=0.05, low=0.08, upp=0.2)
 
             # bounce from top
-            if abs(angle_with_top) > abs(angle_with_bottom):
+            if y0 - y_top < y_bottom - y0:
+            # if abs(angle_with_top) > abs(angle_with_bottom):
                 # if angle_with_top > np.pi / 2 or angle_with_top < -np.pi / 2:
-                print('approached from top!')
+                # print('approached from top!')
                 print(angle_with_top)
                 bounce_vector = top_vector
 
@@ -360,7 +379,7 @@ class Fish():
 
             # bounce from bottom
             else:
-                print('approached from bottom')
+                # print('approached from bottom')
                 bounce_vector = bottom_vector
 
                 # define if bounce left or right
@@ -384,8 +403,6 @@ class Fish():
             # conserve x, but move to y0
             # maybe a more correct stuff can exist but this is good enough
             self.position.y = new_y
-        else:
-            print('not in triangle!')
 
     def bounce_from_edge(self):
         bounce_vector = Vector(0, 0)
