@@ -7,7 +7,8 @@ from utils import random_trunc
 
 class Fish():
 
-    def __init__(self, x, y, width, height, replica=False, replica_type='top', decision_x=None):
+    def __init__(self, x, y, width, height, replica_final_y=80,
+                 replica=False, replica_type='top', decision_x=None):
         self.position = Vector(x, y)
         self.replica = replica
         self.decision_x = decision_x
@@ -15,7 +16,7 @@ class Fish():
 
         self.second_neighbour_turn_coefficient = 0.2
         self.second_neighbour_accelerate_coefficient = 0.2
-        
+
         self.rest_counter = 0
 
         vec = (np.random.rand(2) - 0.5) * 10
@@ -30,7 +31,7 @@ class Fish():
             print(speed)
             if replica_type == 'top':
                 # set speed to direction of replica path
-                self.velocity = Vector(-x, 80 - y).normalize()
+                self.velocity = Vector(-x, replica_final_y - y).normalize()
                 self.velocity = self.velocity + self.velocity * speed
 
         self.max_speed = 17
