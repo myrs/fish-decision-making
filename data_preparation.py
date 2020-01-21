@@ -25,6 +25,7 @@ def fit_sin(tt, yy):
 
     return {"amp": A, "omega": w, "phase": p, "offset": c, "freq": f, "period": 1. / f, "fitfunc": fitfunc, "maxcov": np.max(pcov), "rawres": (guess, popt, pcov), "verbose": verbose}
 
+
 def fit_tan(tt, yy):
     '''Fit sin to the input time sequence, and return fitting parameters "amp", "omega", "phase", "offset", "freq", "period" and "fitfunc"'''
     tt = np.array(tt)
@@ -54,10 +55,11 @@ def fit_tan(tt, yy):
 #     return x * x_resize - x_axis_length
 
 def resize_y(y, height, y_axis_bottom, y_axis_top):
-    y = height - y  
+    y = height - y
     full_y_axis_length = y_axis_top - y_axis_bottom
     y_resize = full_y_axis_length / height
     return y * y_resize + y_axis_bottom
+
 
 def resize_x(x, width, x_axis_left, x_axis_right):
     full_x_axis_length = x_axis_right - x_axis_left
@@ -72,7 +74,7 @@ def resize_x(x, width, x_axis_left, x_axis_right):
 
 
 def reformat_data(points, width, height, x_axis_right, x_axis_left,
-                 y_axis_bottom, y_axis_top):
+                  y_axis_bottom, y_axis_top):
     new_points = []
 
     for point in points:
@@ -88,8 +90,9 @@ def reformat_data(points, width, height, x_axis_right, x_axis_left,
 
     return new_points, xx, yy
 
+
 def fit_data(points, width, height, x_axis_left, x_axis_right,
-                    y_axis_bottom, y_axis_top, regression_points=50, fit_sin=True):
+             y_axis_bottom, y_axis_top, regression_points=50, fit_sin_flag=True):
 
     points, xx, yy = reformat_data(points, width, height, x_axis_right, x_axis_left,
                                    y_axis_bottom, y_axis_top)
@@ -97,14 +100,14 @@ def fit_data(points, width, height, x_axis_left, x_axis_right,
     fig, ax = plt.subplots(1, 1)
     ax.set_ylim((y_axis_bottom, y_axis_top))
     ax.set_xlim((x_axis_left, x_axis_right))
-    
 
-    if fit_sin:
+    if fit_sin_flag:
         fit_sin_params = fit_sin(xx, yy)
-        print( "Amplitude=%(amp)s, Angular freq.=%(omega)s, phase=%(phase)s, offset=%(offset)s, Max. Cov.=%(maxcov)s" % fit_sin_params )
+        print("Amplitude=%(amp)s, Angular freq.=%(omega)s, phase=%(phase)s, offset=%(offset)s, Max. Cov.=%(maxcov)s" % fit_sin_params)
 
         xx_fit = np.linspace(x_axis_left, x_axis_right, regression_points)
-        ax.plot(xx_fit, fit_sin_params["fitfunc"](xx_fit), "r-", label="y fit curve", linewidth=2)
+        ax.plot(xx_fit, fit_sin_params["fitfunc"](xx_fit),
+                "r-", label="y fit curve", linewidth=2)
         ax.scatter(xx, yy)
 
         print(fit_sin_params['verbose'])
@@ -132,7 +135,7 @@ def fit_rotation_angle():
     x_axis_right = -np.pi
     x_axis_left = np.pi
     y_axis_bottom = -0.6
-    y_axis_top= 0.6
+    y_axis_top = 0.6
 
     points = [
         [12, 274],
@@ -161,6 +164,36 @@ def fit_rotation_angle():
         [537, 224]
     ]
 
+    width = 531
+    height = 383
+
+    points = [
+        [12, 238],
+        [34, 292],
+        [56, 325],
+        [78, 358],
+        [100, 351],
+        [122, 361],
+        [145, 374],
+        [167, 341],
+        [189, 316],
+        [211, 323],
+        [232, 273],
+        [255, 228],
+        [277, 194],
+        [299, 144],
+        [321, 119],
+        [343, 94],
+        [365, 78],
+        [387, 64],
+        [409, 63],
+        [431, 51],
+        [453, 69],
+        [476, 95],
+        [497, 138],
+        [519, 190]
+    ]
+
     return fit_data(points, width, height, x_axis_left, x_axis_right,
                     y_axis_bottom, y_axis_top)
 
@@ -173,7 +206,7 @@ def fit_speed_acceleration():
     x_axis_left = 0
     x_axis_right = 20
     y_axis_bottom = -6
-    y_axis_top= 6
+    y_axis_top = 6
 
     points = [
         [38, 192],
@@ -205,10 +238,7 @@ def fit_speed_acceleration():
     # ]
 
     return fit_data(points, width, height, x_axis_left, x_axis_right,
-                    y_axis_bottom, y_axis_top, fit_sin=False)
-
-
-
+                    y_axis_bottom, y_axis_top, fit_sin_flag=False)
 
 
 # def fit_acceleration():
@@ -270,25 +300,21 @@ def fit_speed_acceleration():
 #     ax.scatter(xx, yy)
 
 #     start = 0
-#     stop = 14 
-#     polyfit1 = np.polyfit(xx[:stop], yy[:stop], 2)                                     
-#     poly1 = np.poly1d(polyfit1)                                                    
-#     xxfit1 = np.linspace(xx[start], xx[stop - 1], 20)                                        
-#     yyfit1 = poly1(xxfit1)                                                          
-#     plt.plot(xx[start:stop - 1], yy[start:stop - 1], 'o', xxfit1, yyfit1)  
+#     stop = 14
+#     polyfit1 = np.polyfit(xx[:stop], yy[:stop], 2)
+#     poly1 = np.poly1d(polyfit1)
+#     xxfit1 = np.linspace(xx[start], xx[stop - 1], 20)
+#     yyfit1 = poly1(xxfit1)
+#     plt.plot(xx[start:stop - 1], yy[start:stop - 1], 'o', xxfit1, yyfit1)
 
 #     start = 14
 #     stop = 20
-#     polyfit1 = np.polyfit(xx[start:stop], yy[start:stop], 2)                                     
-#     poly1 = np.poly1d(polyfit1)                                                    
-#     xxfit1 = np.linspace(xx[start], xx[stop - 1], 20)                                        
-#     yyfit1 = poly1(xxfit1)                                                          
-#     plt.plot(xx[start:stop - 1], yy[start:stop - 1], 'o', xxfit1, yyfit1)  
+#     polyfit1 = np.polyfit(xx[start:stop], yy[start:stop], 2)
+#     poly1 = np.poly1d(polyfit1)
+#     xxfit1 = np.linspace(xx[start], xx[stop - 1], 20)
+#     yyfit1 = poly1(xxfit1)
+#     plt.plot(xx[start:stop - 1], yy[start:stop - 1], 'o', xxfit1, yyfit1)
 
-#     plt.scatter(xx, yy) 
+#     plt.scatter(xx, yy)
 
 #     return points, xx, yy
-
-
-
-

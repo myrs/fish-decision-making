@@ -20,7 +20,16 @@ box_top = 335
 
 fishes = [Fish(box_left + np.random.random() * box_width, 
                box_top + np.random.random() * box_width,
-               width, height) for _ in range(10)]
+               width, height) for _ in range(4)]
+
+replica_y_start = box_top + box_width / 2
+replica_x_start = width - box_padding_left - box_width / 2
+
+replica = Fish(replica_x_start, replica_y_start, width, height, replica=True)
+fishes.append(replica)
+
+replica = Fish(replica_x_start, replica_y_start, width, height, replica=True)
+fishes.append(replica)
 
 def setup():
     # this happens just once
@@ -38,8 +47,8 @@ def draw():
 
     rect((box_left, 335), box_width, box_width)
 
-    line((0, 80), (width, 325))
-    line((0, 720), (width, 475))
+    line((0, 80), (replica_x_start, replica_y_start))
+    line((0, 720), (replica_x_start, replica_y_start))
 
     for fish in fishes:
         fish.update(fishes)
