@@ -185,7 +185,8 @@ class Fish():
         # TODO - add random movement?
         # when fish has no effect of other neighbors
 
-        if np.random.random() > 0.99:
+        # if np.random.random() > 0.99:
+        if np.random.random() > 1:
             self.velocity = self.velocity.normalize()
             self.rest_counter = int(np.random.random() * 20)
             print(f'set rest counter to {self.rest_counter}')

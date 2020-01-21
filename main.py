@@ -1,4 +1,4 @@
-from p5 import setup, draw, size, background, run, triangle, fill
+from p5 import setup, draw, size, background, run, triangle, fill, rect, line
 import numpy as np
 from fish import Fish
 
@@ -10,9 +10,17 @@ height = 800
 # width = 300
 # height = 300
 
-fishes = [Fish(np.random.random() * width, np.random.random() * height,
-               width, height) for _ in range(10)]
+box_width = 120
+box_padding_left = 40
+box_left = width - box_width - 40
+# box_right = box_left + box_width
 
+box_top = 335
+# box_bottom = 335 + box_width
+
+fishes = [Fish(box_left + np.random.random() * box_width, 
+               box_top + np.random.random() * box_width,
+               width, height) for _ in range(10)]
 
 def setup():
     # this happens just once
@@ -27,6 +35,11 @@ def draw():
 
     fill(102)
     triangle((0, 160), (0, 640), (700, 400))
+
+    rect((box_left, 335), box_width, box_width)
+
+    line((0, 80), (width, 325))
+    line((0, 720), (width, 475))
 
     for fish in fishes:
         fish.update(fishes)
