@@ -1,17 +1,17 @@
-from p5 import setup, draw, size, background, run, triangle
+from p5 import setup, draw, size, background, run, triangle, fill
 import numpy as np
 from fish import Fish
 
 
 # width = 800
 # height = 200
-width = 400
-height = 400
+width = 1400
+height = 800
 # width = 300
 # height = 300
 
 fishes = [Fish(np.random.random() * width, np.random.random() * height,
-               width, height) for _ in range(18)]
+               width, height) for _ in range(10)]
 
 
 def setup():
@@ -25,10 +25,13 @@ def draw():
     # triangle((0, 0), (0, 200), (350, 100))
     background(30, 30, 47)
 
+    fill(102)
+    triangle((0, 160), (0, 640), (700, 400))
+
     for fish in fishes:
-        # fish.apply_behaviour(fishes)
-        # fish.edges()
         fish.update(fishes)
+        # to test with one fish
+        # fish.update_one(fishes)
         fish.show()
 
 
