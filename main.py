@@ -1,62 +1,110 @@
-from p5 import setup, draw, size, background, run, triangle, fill, rect, line
+import time
 import numpy as np
+
+from p5 import setup, draw, size, background, run, triangle, fill, rect, line
 from fish import Fish
 
+class Simulation:
+    def __init__(self, fishes=4, replicas=2):        
+        self.width = 1400
+        self.height = 800
+            
+        # box parameters
+        self.box_width = 120
+        self.box_padding_left = 40
+        self.box_left = self.width - self.box_width - 40
+        self.box_top = 335
 
-# width = 800
-# height = 200
-width = 1400
-height = 800
-# width = 300
-# height = 300
+        self.fishes = fishes
+        self.replicas = replicas
 
-box_width = 120
-box_padding_left = 40
-box_left = width - box_width - 40
-# box_right = box_left + box_width
+        # decision line position
+        self.decision_x = 520
 
-box_top = 335
-# box_bottom = 335 + box_width
+        self.shoal = [Fish(self.box_left + np.random.random() * self.box_width, 
+                       self.box_top + np.random.random() * self.box_width,
+                       self.width, self.height, decision_x=self.decision_x) for _ in range(fishes)]
 
-fishes = [Fish(box_left + np.random.random() * box_width, 
-               box_top + np.random.random() * box_width,
-               width, height) for _ in range(4)]
+        self.replica_y_start = self.box_top + self.box_width / 2
+        self.replica_x_start = self.width - self.box_padding_left - self.box_width / 2
 
-replica_y_start = box_top + box_width / 2
-replica_x_start = width - box_padding_left - box_width / 2
+        for i in range(replicas):
+            replica = Fish(self.replica_x_start, self.replica_y_start, self.width, self.height, replica=True)
+            self.shoal.append(replica)
 
-replica = Fish(replica_x_start, replica_y_start, width, height, replica=True)
-fishes.append(replica)
+    def draw_objects(self):
+        # global simulation
 
-replica = Fish(replica_x_start, replica_y_start, width, height, replica=True)
-fishes.append(replica)
+        # triangle((0, 0), (0, 200), (350, 100))
+        background(30, 30, 47)
+
+        fill(102)
+        triangle((0, 160), (0, 640), (700, 400))
+
+        # fishes' start box
+        rect((self.box_left, 335), self.box_width, self.box_width)
+
+        # replica line
+        line((0, 80), (self.replica_x_start, self.replica_y_start))
+        # line((0, 720), (self.replica_x_start, self.replica_y_start))
+
+        # decision line
+        line((self.decision_x, 0), (self.decision_x, self.height))
+
+    def run_step(self, visualize=True):
+        # global simulation
+
+        if visualize:
+            self.draw_objects()
+
+        for fish in self.shoal:
+            fish.update(self.shoal)
+            # to test with one fish
+            # fish.update_one(fishes)
+            if visualize:
+                fish.show()
+
+        fishes_not_replica = list(filter(lambda f: not f.replica, self.shoal))
+        top = len(list(filter(lambda f: f.decision == 'top', fishes_not_replica)))
+        bottom = len(list(filter(lambda f: f.decision == 'bottom', fishes_not_replica)))
+
+        total = top + bottom
+        all_dicided = total == len(fishes_not_replica)
+
+        return all_dicided, top, bottom
 
 def setup():
+    # global simulation
     # this happens just once
-    size(width, height)  # instead of create_canvas
-
+    size(simulation.width, simulation.height)  # instead of create_canvas
 
 def draw():
-    global fishes
+    simulation.run_step()
 
-    # triangle((0, 0), (0, 200), (350, 100))
-    background(30, 30, 47)
+def headless_simulation(fishes=4, replicas=0):
+    start = time.time()
+    simulation = Simulation(fishes=fishes, replicas=replicas)
+    
+    all_dicided = False
+    step = 0
+    
+    while not all_dicided:
+        step += 1
+        print(f'step: {step}', end='\r')
+        all_dicided, top, bottom = simulation.run_step(False)
 
-    fill(102)
-    triangle((0, 160), (0, 640), (700, 400))
+    print(f'Decided top: {top}, decided bottom: {bottom}, steps: {step}')
+    end = time.time()
 
-    rect((box_left, 335), box_width, box_width)
+    print(f'total time: {end - start:.2f}')
+    return top, bottom
 
-    line((0, 80), (replica_x_start, replica_y_start))
-    line((0, 720), (replica_x_start, replica_y_start))
+if __name__ == '__main__':
+    # TODO add sys args!
+    simulation = Simulation()
+    
+    run()
+    # run(frame_rate=25)
+    # run(frame_rate=1000)
 
-    for fish in fishes:
-        fish.update(fishes)
-        # to test with one fish
-        # fish.update_one(fishes)
-        fish.show()
 
-
-# run(frame_rate=25)
-# run(frame_rate=200)
-run()
