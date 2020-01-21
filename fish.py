@@ -7,12 +7,14 @@ from utils import random_trunc
 
 class Fish():
 
-    def __init__(self, x, y, width, height, replica_final_y=80,
+    def __init__(self, x, y, width, height, shaded_area_x, replica_final_y=80,
                  replica=False, replica_type='top', decision_x=None):
         self.position = Vector(x, y)
         self.replica = replica
         self.decision_x = decision_x
         self.decision = None
+        self.reached_shaded_area = False
+        self.shaded_area_x = shaded_area_x
 
         self.second_neighbour_turn_coefficient = 0.2
         self.second_neighbour_accelerate_coefficient = 0.2
@@ -54,11 +56,25 @@ class Fish():
             self.update_replica()
             return
 
+        if self.reached_shaded_area:
+            return
+
         # validate if fish crossed decision line the first time
         if not self.decision and self.position.x < self.decision_x:
             print('fish made decision!')
             self.decision = 'top' if self.position.y < self.height / 2 else 'bottom'
             print(f'decision: {self.decision}')
+
+        if self.position.x < self.shaded_area_x:
+            self.reached_shaded_area = True
+            print('fish reached shaded area!')
+            self.velocity = Vector(0, 0)
+            self.position.x = 10
+            self.position.y = 10 if self.position.y < self.height / 2 else self.height - 10
+            # make it move reeeeal slow in direction to wall 
+            # setting vector to 0 would lead to division errors (maybe)
+
+            return
 
         # if np.random.random() > 0.99:
         if np.random.random() > 1:
@@ -83,6 +99,18 @@ class Fish():
 
         # turning_angle = turning_angle_closest
         turning_angle = turning_angle_closest + turning_angle_2nd_closest
+
+        # if there are no neighbors 
+        if turning_angle == 0:
+            # turn to the direction of border
+            left_border_vector = Vector(0, self.height / 2)
+            direction_to_border = left_border_vector - self.position
+            angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
+            turning_angle = self.get_turning_angle(angle)
+
+            # turn a little bit randomly
+            # Original - random angle
+            # turning_angle = random_trunc(mean=0, sd=0.2, low=-10, upp=10)
 
         # change fish direction,
         # rotating velocity vector by the turning angle
@@ -186,6 +214,21 @@ class Fish():
         # the angle need to be negative to rotate
         return self.get_angle_normalized(self.velocity.angle, direction_to_neighbor.angle)
 
+    def get_turning_angle(self, angle):
+        # put it in sinus function
+        # result = 0.5091 * np.sin(0.9987 * angle + 0.0071) - 0.0519
+        # result = 0.49 * np.sin(0.97 * angle) - 0.06
+        # result = 0.51 * np.sin(angle + 0.01) - 0.05
+        # $-0.49 \\cdot \\sin (0.97 \\cdot x + 0.00) + -0.06
+        turning_angle = 0.49 * np.sin(0.97 * angle)
+
+        turning_angle = random_trunc(mean=turning_angle, sd=0.2,
+                              low=turning_angle - 0.4, upp=turning_angle + 0.4)
+        turning_angle = self.normalize_angle(turning_angle)
+
+        return turning_angle
+
+
     def get_turning_angle_for_neighbor(self, neighbour, coefficient=1.0):
         """calculate turning angle in rads/second"""
         # get angle
@@ -193,28 +236,19 @@ class Fish():
             return 0
 
         angle = self.get_angle_with_neighbor()
-        result = 0
+        turning_angle = 0
 
         # print(self.position.distance(neighbour.position))
 
         # set to 60
-        if self.position.distance(neighbour.position) < 60:
-            # if True:
-            # put it in sinus function
-            # TODO should we be that precise? maybe just 2 digits?
-            # result = 0.5091 * np.sin(0.9987 * angle + 0.0071) - 0.0519
-            result = 0.49 * np.sin(0.97 * angle) - 0.06
-            # $-0.49 \\cdot \\sin (0.97 \\cdot x + 0.00) + -0.06
+        if self.position.distance(neighbour.position) < 100:
+            turning_angle = self.get_turning_angle(angle)
+            if self.position.distance(neighbour.position) > 60:
+                # half strength if fish is far away
+                turning_angle * 0.5
 
-            result = random_trunc(mean=result, sd=0.2,
-                                  low=result - 0.4, upp=result + 0.4)
-            result = self.normalize_angle(result)
-            # result = 0.51 * np.sin(angle + 0.01) - 0.05
-        else:
-            result = random_trunc(mean=0, sd=0.2, low=-10, upp=10)
-
-        # return result multiplied by neighbor coefficient
-        return result * coefficient
+        # return turning_angle multiplied by neighbor coefficient
+        return turning_angle * coefficient
 
     def get_acceleration_for_neighbor(self, neighbor, coefficient=1):
         """calculate acceleration defined by the closes neighbor"""
