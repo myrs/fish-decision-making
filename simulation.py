@@ -63,13 +63,15 @@ class Simulation:
 
     def get_starting_x(self, position=None):
         if position == 'top' or position == 'bottom':
-            return self.width
+            return self.width - 20
+            # return self.width
 
         return self.box_left + np.random.random() * self.box_width
 
     def get_starting_y(self, position=None):
         if position == 'top':
             return self.box_top - 10
+            # return self.box_top - 10
         elif position == 'bottom':
             return self.box_top + self.box_width + 10
 
@@ -86,7 +88,7 @@ class Simulation:
         # shaded are upper quadrant 
         quad((0, 0), (0, 160), (280, 256), (self.shaded_area_x, 0))
         quad((0, self.height), (0, 640), (280, 544), (self.shaded_area_x, self.height))
-        
+
         fill(102)
         triangle((0, 160), (0, 640), (700, 400))
         

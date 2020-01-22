@@ -16,8 +16,11 @@ class Fish():
         self.reached_shaded_area = False
         self.shaded_area_x = shaded_area_x
 
-        self.second_neighbor_turn_coefficient = 0.2
-        self.second_neighbor_accelerate_coefficient = 0.2
+        self.second_neighbor_turn_coefficient = 0.3
+        self.second_neighbor_accelerate_coefficient = 0.3
+
+        # self.second_neighbor_turn_coefficient = 0.5
+        # self.second_neighbor_accelerate_coefficient = 0.5
 
         self.rest_counter = 0
 
@@ -103,14 +106,14 @@ class Fish():
         # if there are no neighbors 
         if turning_angle == 0:
             # turn to the direction of border
-            left_border_vector = Vector(0, self.height / 2)
-            direction_to_border = left_border_vector - self.position
-            angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
-            turning_angle = self.get_turning_angle(angle)
+            # left_border_vector = Vector(0, self.height / 2)
+            # direction_to_border = left_border_vector - self.position
+            # angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
+            # turning_angle = self.get_turning_angle(angle)
 
             # turn a little bit randomly
             # Original - random angle
-            # turning_angle = random_trunc(mean=0, sd=0.2, low=-10, upp=10)
+            turning_angle = random_trunc(mean=0, sd=0.2, low=-10, upp=10)
 
         # change fish direction,
         # rotating velocity vector by the turning angle
@@ -220,6 +223,7 @@ class Fish():
         # result = 0.49 * np.sin(0.97 * angle) - 0.06
         # result = 0.51 * np.sin(angle + 0.01) - 0.05
         # $-0.49 \\cdot \\sin (0.97 \\cdot x + 0.00) + -0.06
+        # turning_angle = 0.49 * np.sin(0.97 * angle) - 0.6
         turning_angle = 0.49 * np.sin(0.97 * angle)
 
         turning_angle = random_trunc(mean=turning_angle, sd=0.2,
@@ -245,7 +249,7 @@ class Fish():
             turning_angle = self.get_turning_angle(angle)
             if self.position.distance(neighbor.position) > 60:
                 # half strength if fish is far away
-                turning_angle * 0.5
+                turning_angle = turning_angle * 0.5
 
         # return turning_angle multiplied by neighbor coefficient
         return turning_angle * coefficient
@@ -275,8 +279,8 @@ class Fish():
         acceleration = 0
 
         # if angle is between -0.194 to 0.194 - it's a dead zone for acceleration
-        # if angle > 0.194 or angle < -0.194:
-        if True:
+        if angle > 0.194 or angle < -0.194:
+        # if True:
             # cases:
             # 1. Strong attraction
             # -- when fish closer than 23.5 centimeters
@@ -308,24 +312,29 @@ class Fish():
                 print(y, top)
                 pass
 
-            # if distance_to_neighbor <= 23.5 and distance_to_neighbor > 7.9:
-            if is_close_enough and distance_to_neighbor > 9:
+            if distance_to_neighbor <= 100 and distance_to_neighbor > 6:
+            # if is_close_enough and distance_to_neighbor > 9:
                 # if is_close_enough and distance_to_neighbor > 7.9:
                 # 1.1. If neighbor in front - accelerate towards it
                 if neighbor_in_front:
                     # print('acceleration far')
                     # acceleration = 0
                     # acceleration = 1
-                    acceleration = random_trunc(mean=2, sd=0.3, low=0.5, upp=3.5)
+
+                    if distance_to_neighbor > 25:
+                        acceleration = random_trunc(mean=2, sd=0.2, low=1.5, upp=2.5)
+                    elif distance_to_neighbor > 10:
+                        acceleration = random_trunc(mean=1, sd=0.25, low=0.5, upp=1.5)
+                    else:
+                        acceleration = random_trunc(mean=0.5, sd=0.25, low=0, upp=1)
 
                 # 1.1. If neighbor in behind - decelerate
-                # Do nothing!
-                # else:
-                #     # print('decelerate far')
-                #     # print('decelerate')
-                #     # acceleration = -1.2
-                #     # acceleration = 0
-                #     acceleration = random_trunc(mean=-1.2, sd=0.2, low=-1.4, upp=-0.8)
+                else:
+                    # print('decelerate far')
+                    # print('decelerate')
+                    # acceleration = -1.2
+                    # acceleration = 0
+                    acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
 
             # 2. Strong repulsion (when fish closer than 4.06 centimeters)
             # elif distance_to_neighbor < 4.06:
@@ -333,7 +342,7 @@ class Fish():
                 if neighbor_in_front:
                     # print('decelerate close')
                     # acceleration = -4
-                    acceleration = random_trunc(mean=-2, sd=0.4, low=-3.5, upp=-1)
+                    acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
                     # acceleration =
                     # print(acceleration)
 
@@ -347,12 +356,12 @@ class Fish():
                     # acceleration = 2
                     # acceleration = random_trunc(mean=0.5, sd=0.3, low=0.2, upp=1.2)
                     # print('behind acceleration')
-                    acceleration = random_trunc(mean=2, sd=0.5, low=1, upp=3.5)
+                    acceleration = random_trunc(mean=1.5, sd=0.25, low=1, upp=2)
 
         # 3. When fish is between 4.06 and 7.9 - do nothing
         # TODO maybe some random stuff??
 
-        return acceleration
+        return acceleration * coefficient
 
     def show(self):
         stroke(255)
