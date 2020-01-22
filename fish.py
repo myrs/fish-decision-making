@@ -8,7 +8,7 @@ from utils import random_trunc
 class Fish():
 
     def __init__(self, x, y, width, height, shaded_area_x, replica_final_y=80,
-                 replica=False, replica_type='top', decision_x=None):
+                 replica=False, decision_x=None):
         self.position = Vector(x, y)
         self.replica = replica
         self.decision_x = decision_x
@@ -16,8 +16,8 @@ class Fish():
         self.reached_shaded_area = False
         self.shaded_area_x = shaded_area_x
 
-        self.second_neighbor_turn_coefficient = 0.3
-        self.second_neighbor_accelerate_coefficient = 0.3
+        self.second_neighbor_turn_coefficient = 0.25
+        self.second_neighbor_accelerate_coefficient = 0.25
 
         # self.second_neighbor_turn_coefficient = 0.5
         # self.second_neighbor_accelerate_coefficient = 0.5
@@ -32,12 +32,12 @@ class Fish():
         else:
             # get speed from initial vector
             speed = float(Vector(*vec).magnitude)
+            # speed = 3
             print('speed')
             print(speed)
-            if replica_type == 'top':
-                # set speed to direction of replica path
-                self.velocity = Vector(-x, replica_final_y - y).normalize()
-                self.velocity = self.velocity + self.velocity * speed
+            # set speed to direction of replica path
+            self.velocity = Vector(-x, replica_final_y - y).normalize()
+            self.velocity = self.velocity + self.velocity * speed
 
         self.max_speed = 17
         # self.max_speed = 10
@@ -49,6 +49,7 @@ class Fish():
         # print('update replica')
         acceleration = self.get_standard_acceleration()
         self.velocity = self.velocity + self.velocity * acceleration / self.velocity.magnitude
+
         self.position += self.velocity
 
     def update(self, fishes):
@@ -74,7 +75,7 @@ class Fish():
             self.velocity = Vector(0, 0)
             self.position.x = 10
             self.position.y = 10 if self.position.y < self.height / 2 else self.height - 10
-            # make it move reeeeal slow in direction to wall 
+            # make it move reeeeal slow in direction to wall
             # setting vector to 0 would lead to division errors (maybe)
 
             return
@@ -103,7 +104,23 @@ class Fish():
         # turning_angle = turning_angle_closest
         turning_angle = turning_angle_closest + turning_angle_2nd_closest
 
-        # if there are no neighbors 
+        # angle for left wall direction
+        # all fishes are experimenting the same attraction to the left wall
+
+        if self.position.y < 400:
+            left_border_vector = Vector(0, 80)
+        else:
+            left_border_vector = Vector(0, 720)
+
+        # left_border_vector = Vector(0, self.height / 2)
+
+        direction_to_border = left_border_vector - self.position
+        angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
+        left_wall_attraction = self.get_turning_angle(angle)
+
+        turning_angle += left_wall_attraction
+
+        # if there are no neighbors
         if turning_angle == 0:
             # turn to the direction of border
             # left_border_vector = Vector(0, self.height / 2)
@@ -113,7 +130,7 @@ class Fish():
 
             # turn a little bit randomly
             # Original - random angle
-            turning_angle = random_trunc(mean=0, sd=0.2, low=-10, upp=10)
+            turning_angle = random_trunc(mean=0, sd=0.4, low=-10, upp=10)
 
         # change fish direction,
         # rotating velocity vector by the turning angle
@@ -223,15 +240,14 @@ class Fish():
         # result = 0.49 * np.sin(0.97 * angle) - 0.06
         # result = 0.51 * np.sin(angle + 0.01) - 0.05
         # $-0.49 \\cdot \\sin (0.97 \\cdot x + 0.00) + -0.06
-        # turning_angle = 0.49 * np.sin(0.97 * angle) - 0.6
+        # turning_angle = 0.49 * np.sin(0.97 * angle) - 0.06
         turning_angle = 0.49 * np.sin(0.97 * angle)
 
-        turning_angle = random_trunc(mean=turning_angle, sd=0.2,
-                              low=turning_angle - 0.4, upp=turning_angle + 0.4)
+        turning_angle = random_trunc(mean=turning_angle, sd=0.1,
+                                     low=turning_angle - 0.4, upp=turning_angle + 0.4)
         turning_angle = self.normalize_angle(turning_angle)
 
         return turning_angle
-
 
     def get_turning_angle_for_neighbor(self, neighbor, coefficient=1.0):
         """calculate turning angle in rads/second"""
@@ -268,7 +284,7 @@ class Fish():
         angle = self.get_angle_with_neighbor(neighbor)
 
         if angle > 0 and angle < np.pi / 2 \
-            or angle < 0 and angle > -np.pi /2:
+                or angle < 0 and angle > -np.pi / 2:
             neighbor_in_front = True
         else:
             neighbor_in_front = False
@@ -278,85 +294,57 @@ class Fish():
         # default acceleration is 0
         acceleration = 0
 
-        # if angle is between -0.194 to 0.194 - it's a dead zone for acceleration
-        if angle > 0.194 or angle < -0.194:
-        # if True:
-            # cases:
-            # 1. Strong attraction
-            # -- when fish closer than 23.5 centimeters
-            # -- and further, than 7.9 centimeters
-
-            # point should be inside the ellipse
-            # +=0.83666 sqrt(27 - x^2)
-            x0 = self.position.x
-            y0 = self.position.y
-
-            is_close_enough = False
-
-            # x is a position of fish to test
-            # it should lie inside y = +- solution
-            x = neighbor.position.x
-            y = neighbor.position.y
-
-            try:
-                y1 = 0.1 * (10 * y0 - 7 * np.sqrt(-1 *
-                                                  (x0 ** 2) + 2 * x0 * x - x ** 2 + 729))
-                y2 = 0.1 * (10 * y0 + 7 * np.sqrt(-1 *
-                                                  (x0 ** 2) + 2 * x0 * x - x ** 2 + 729))
-
-                top = y1 if y1 >= y2 else y2
-                bottom = y1 if y1 < y2 else y2
-
-                is_close_enough = bottom < y < top
-            except Exception:
-                print(y, top)
-                pass
-
-            if distance_to_neighbor <= 100 and distance_to_neighbor > 6:
+        # cases:
+        # 1. Strong attraction
+        # -- when fish closer than 23.5 centimeters
+        # -- and further, than 7.9 centimeters
+        if distance_to_neighbor <= 100 and distance_to_neighbor > 8:
             # if is_close_enough and distance_to_neighbor > 9:
-                # if is_close_enough and distance_to_neighbor > 7.9:
-                # 1.1. If neighbor in front - accelerate towards it
-                if neighbor_in_front:
-                    # print('acceleration far')
-                    # acceleration = 0
-                    # acceleration = 1
+            # if is_close_enough and distance_to_neighbor > 7.9:
+            # 1.1. If neighbor in front - accelerate towards it
+            if neighbor_in_front:
+                # print('acceleration far')
+                acceleration = 0
+                # acceleration = 1
 
-                    if distance_to_neighbor > 25:
-                        acceleration = random_trunc(mean=2, sd=0.2, low=1.5, upp=2.5)
-                    elif distance_to_neighbor > 10:
-                        acceleration = random_trunc(mean=1, sd=0.25, low=0.5, upp=1.5)
-                    else:
-                        acceleration = random_trunc(mean=0.5, sd=0.25, low=0, upp=1)
-
-                # 1.1. If neighbor in behind - decelerate
+                if distance_to_neighbor > 25:
+                    acceleration = random_trunc(mean=2, sd=0.2, low=1.5, upp=2.5)
+                elif distance_to_neighbor > 10:
+                    acceleration = random_trunc(mean=1.5, sd=0.25, low=0.5, upp=1.5)
                 else:
-                    # print('decelerate far')
-                    # print('decelerate')
-                    # acceleration = -1.2
-                    # acceleration = 0
-                    acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
+                    acceleration = random_trunc(mean=0.5, sd=0.25, low=0, upp=1)
 
-            # 2. Strong repulsion (when fish closer than 4.06 centimeters)
-            # elif distance_to_neighbor < 4.06:
-            elif distance_to_neighbor < 6:
-                if neighbor_in_front:
-                    # print('decelerate close')
-                    # acceleration = -4
-                    acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
-                    # acceleration =
-                    # print(acceleration)
+            # 1.1. If neighbor in behind - decelerate
+            else:
+                # print('decelerate far')
+                # print('decelerate')
+                # acceleration = -1.2
+                # acceleration = 0
+                acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
 
-                    # acceleration = -0.8
+        # 2. Strong repulsion (when fish closer than 4.06 centimeters)
+        # elif distance_to_neighbor < 4.06:
+        elif distance_to_neighbor < 8:
+            if neighbor_in_front:
+                # print('decelerate close')
+                # acceleration = -4
+                # acceleration = 0
+                acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
+                # acceleration =
+                # print(acceleration)
 
-                # accelerate a little bit if there's someone directly behind us
-                else:
-                    # print('acceleration close')
-                    # pass
-                    # acceleration = 0.4
-                    # acceleration = 2
-                    # acceleration = random_trunc(mean=0.5, sd=0.3, low=0.2, upp=1.2)
-                    # print('behind acceleration')
-                    acceleration = random_trunc(mean=1.5, sd=0.25, low=1, upp=2)
+                # acceleration = -0.8
+
+            # accelerate a little bit if there's someone directly behind us
+            else:
+                # print('acceleration close')
+                # pass
+                # acceleration = 0.4
+                # acceleration = 2
+                # acceleration = random_trunc(mean=0.5, sd=0.3, low=0.2, upp=1.2)
+                # print('behind acceleration')
+                # acceleration = 0
+                acceleration = random_trunc(mean=2, sd=0.25, low=1.5, upp=2.5)
 
         # 3. When fish is between 4.06 and 7.9 - do nothing
         # TODO maybe some random stuff??
@@ -379,17 +367,39 @@ class Fish():
             if self == neighbor:
                 continue
 
-            distance = self.position.distance(neighbor.position)
-            if distance < closest_distance:
-                second_closest = first_closest
-                second_closest_distance = closest_distance
+            # distance = self.position.distance(neighbor.position)
+            # if distance < closest_distance:
+            #     second_closest = first_closest
+            #     second_closest_distance = closest_distance
 
-                closest_distance = distance
-                first_closest = neighbor
+            #     closest_distance = distance
+            #     first_closest = neighbor
 
-            elif distance < second_closest_distance:
-                second_closest = neighbor
-                second_closest_distance = distance
+            # elif distance < second_closest_distance:
+            #     second_closest = neighbor
+            #     second_closest_distance = distance
+
+            # we should be able to see this neighbor!
+            # as fish vision is not 360 degrees
+            angle = self.get_angle_with_neighbor(neighbor)
+            # blind_front = 0
+            blind_back = np.pi / 15
+
+            if angle < np.pi - blind_back and angle > -np.pi + blind_back:
+                distance = self.position.distance(neighbor.position)
+                if distance < closest_distance:
+                    second_closest = first_closest
+                    second_closest_distance = closest_distance
+
+                    closest_distance = distance
+                    first_closest = neighbor
+
+                elif distance < second_closest_distance:
+                    second_closest = neighbor
+                    second_closest_distance = distance
+            else:
+                pass
+                # print('can\'t see a neighbor! ignore this guy')
 
         self.first_closest = first_closest
         self.second_closest = second_closest

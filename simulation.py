@@ -15,7 +15,7 @@ class Simulation:
         # box parameters
         self.box_width = 120
         self.box_padding_left = 40
-        self.box_left = self.width - self.box_width - 40
+        self.box_left = self.width - self.box_width - self.box_padding_left 
         self.box_top = 335
 
         self.fishes = fishes
@@ -63,17 +63,17 @@ class Simulation:
 
     def get_starting_x(self, position=None):
         if position == 'top' or position == 'bottom':
-            return self.width - 20
+            return self.width - 40
             # return self.width
 
         return self.box_left + np.random.random() * self.box_width
 
     def get_starting_y(self, position=None):
         if position == 'top':
-            return self.box_top - 10
-            # return self.box_top - 10
+            return self.box_top + 40
+            # return self.box_top - 40
         elif position == 'bottom':
-            return self.box_top + self.box_width + 10
+            return self.box_top + self.box_width - 40
 
         # random position
         return self.box_top + np.random.random() * self.box_width

@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -68,3 +69,40 @@ def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0):
     print('all frequencies:', all_frequencies)
 
     return all_frequencies
+
+def run_set(shoals=30):
+    start = time.time()
+
+    results = []
+    # 1:1 - 1 bottom, 1 top
+    r = run_experiments(shoals=shoals, replicas_bottom=1, replicas_top=1)
+    results.append(r)
+
+    # 2:2 - 2 bottom, 2 top
+    r = run_experiments(shoals=shoals, replicas_bottom=2, replicas_top=2)
+    results.append(r)
+    
+    # 0:1 - 0 bottom, 1 top
+    r = run_experiments(shoals=shoals, replicas_bottom=0, replicas_top=1)
+    results.append(r)
+
+    # 0:2 - 0 bottom, 2 top 
+    r = run_experiments(shoals=shoals, replicas_bottom=-0, replicas_top=2)
+    results.append(r)
+    
+    # 0:3 - 0 bottom, 3 top
+    r = run_experiments(shoals=shoals, replicas_bottom=0, replicas_top=3)
+    results.append(r)
+    
+    # 1:2 - 1 bottom, 2 top
+    r = run_experiments(shoals=shoals, replicas_bottom=1, replicas_top=2)
+    results.append(r)
+    
+    # 1:3 - 1 bottom, 2 top
+    r = run_experiments(shoals=shoals, replicas_bottom=1, replicas_top=2)
+    results.append(r)
+
+    end = time.time()
+    print(f'\n all sets time: {end - start:.2f}')
+
+    return results
