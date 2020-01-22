@@ -9,18 +9,27 @@ from fish import Fish
 class Simulation:
 
     def __init__(self, fishes=4, replicas_top=0, replicas_bottom=0):
-        self.width = 1400
+        self.width = 1500
+        # self.width = 1300
         self.height = 800
 
         # box parameters
         self.box_width = 120
         self.box_padding_left = 40
-        self.box_left = self.width - self.box_width - self.box_padding_left 
+        self.box_left = self.width - self.box_width - self.box_padding_left
         self.box_top = 335
 
         self.fishes = fishes
         self.replicas_top = replicas_top
 
+        # self.replica_initial_y_top = 320
+        # self.replica_initial_y_bottom = 480
+        # self.replica_final_y_top = 80
+        # self.replica_final_y_bottom = 720
+
+        # replica inside
+        self.replica_initial_y_top = self.box_top + 20
+        self.replica_initial_y_bottom = self.box_top + self.box_width - 20
         self.replica_final_y_top = 80
         self.replica_final_y_bottom = 720
 
@@ -41,19 +50,20 @@ class Simulation:
         self.replicas_coordinates = []
 
         for i in range(replicas_top):
-            self.add_replica('top')
+            self.add_replica(i, 'top')
 
         for i in range(replicas_bottom):
-            self.add_replica('bottom')
+            self.add_replica(i, 'bottom')
 
-    def add_replica(self, position):
-        x = self.get_starting_x(position)
-        y = self.get_starting_y(position)
+    def add_replica(self, replica_id, position):
+        x = self.get_replica_x(replica_id)
+        y = self.get_replica_y(x, position)
 
-        if position == 'top':
-            final_y = self.replica_final_y_top
-        else:
-            final_y = self.replica_final_y_bottom
+        final_y = self.get_replica_y(0, position)
+        # if position == 'top':
+        #     final_y = self.replica_final_y_top
+        # else:
+        #     final_y = self.replica_final_y_bottom
 
         self.replicas_coordinates.append((x, y, final_y))
 
@@ -61,20 +71,24 @@ class Simulation:
                        replica=True, replica_final_y=final_y)
         self.shoal.append(replica)
 
-    def get_starting_x(self, position=None):
-        if position == 'top' or position == 'bottom':
-            return self.width - 40
-            # return self.width
+    def get_replica_x(self, replica_id):
+        # return self.width - 10 - replica_id * 15
+        return self.width - self.box_padding_left - self.box_width / 2 - replica_id * 15
 
+    def get_replica_y(self, x, position):
+        x_initial = self.width - self.box_padding_left - self.box_width / 2
+
+        if position == 'top':
+            return (self.replica_initial_y_top - self.replica_final_y_top) * x \
+                / x_initial + self.replica_final_y_top
+        else:
+            return (self.replica_initial_y_bottom - self.replica_final_y_bottom) * x \
+                / x_initial + self.replica_final_y_bottom
+
+    def get_starting_x(self, position=None):
         return self.box_left + np.random.random() * self.box_width
 
     def get_starting_y(self, position=None):
-        if position == 'top':
-            return self.box_top + 40
-            # return self.box_top - 40
-        elif position == 'bottom':
-            return self.box_top + self.box_width - 40
-
         # random position
         return self.box_top + np.random.random() * self.box_width
 
@@ -85,17 +99,15 @@ class Simulation:
         background(30, 30, 47)
 
         fill(50)
-        # shaded are upper quadrant 
+        # shaded are upper quadrant
         quad((0, 0), (0, 160), (280, 256), (self.shaded_area_x, 0))
         quad((0, self.height), (0, 640), (280, 544), (self.shaded_area_x, self.height))
 
         fill(102)
         triangle((0, 160), (0, 640), (700, 400))
-        
 
         # fishes' start box
         rect((self.box_left, 335), self.box_width, self.box_width)
-
 
         # replica line
         for rc in self.replicas_coordinates:

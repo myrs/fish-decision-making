@@ -31,8 +31,8 @@ class Fish():
             print(self.velocity.magnitude)
         else:
             # get speed from initial vector
-            speed = float(Vector(*vec).magnitude)
-            # speed = 3
+            # speed = float(Vector(*vec).magnitude)
+            speed = 8
             print('speed')
             print(speed)
             # set speed to direction of replica path
@@ -324,7 +324,7 @@ class Fish():
 
         # 2. Strong repulsion (when fish closer than 4.06 centimeters)
         # elif distance_to_neighbor < 4.06:
-        elif distance_to_neighbor < 8:
+        elif distance_to_neighbor < 6:
             if neighbor_in_front:
                 # print('decelerate close')
                 # acceleration = -4

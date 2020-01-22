@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.optimize
 from matplotlib import pyplot as plt
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 
 
 def fit_sin(tt, yy):
@@ -97,11 +98,18 @@ def fit_data(points, width, height, x_axis_left, x_axis_right,
     points, xx, yy = reformat_data(points, width, height, x_axis_right, x_axis_left,
                                    y_axis_bottom, y_axis_top)
 
-    fig, ax = plt.subplots(1, 1)
+    fig, ax = plt.subplots(1, 1, constrained_layout=True)
     ax.set_ylim((y_axis_bottom, y_axis_top))
     ax.set_xlim((x_axis_left, x_axis_right))
 
     if fit_sin_flag:
+        ax.set_xlabel('diction to neighbor (rad)')
+        ax.set_ylabel('fish tuning angle (rad/second)')
+        ax.xaxis.set_major_formatter(FuncFormatter(
+            lambda val, pos: '{:.0g}$\pi$'.format(val / np.pi) if val != 0 else '0'
+        ))
+        ax.xaxis.set_major_locator(MultipleLocator(base=np.pi / 4))        
+
         fit_sin_params = fit_sin(xx, yy)
         print("Amplitude=%(amp)s, Angular freq.=%(omega)s, phase=%(phase)s, offset=%(offset)s, Max. Cov.=%(maxcov)s" % fit_sin_params)
 
@@ -112,19 +120,21 @@ def fit_data(points, width, height, x_axis_left, x_axis_right,
 
         print(fit_sin_params['verbose'])
 
-        ax.set_title(fit_sin_params['verbose'])
-
         return points, fit_sin_params
 
     # polyfit
     else:
+        ax.set_xlabel('fish speed ($cm/s$)')
+        ax.set_ylabel('fish acceleration ($cm/s^2$)')
         polyfit = np.polyfit(xx, yy, 1)
         fit_function = np.poly1d(polyfit)
         xxfit = np.linspace(xx[0], xx[-1], regression_points)
         yyfit = fit_function(xxfit)
-        plt.plot(xx, yy, 'o', xxfit, yyfit)
+        ax.plot(xx, yy, 'o', xxfit, yyfit)
 
         return points, polyfit
+
+    fig.show()
 
 
 def fit_rotation_angle():
@@ -164,36 +174,6 @@ def fit_rotation_angle():
         [537, 224]
     ]
 
-    width = 531
-    height = 383
-
-    points = [
-        [12, 238],
-        [34, 292],
-        [56, 325],
-        [78, 358],
-        [100, 351],
-        [122, 361],
-        [145, 374],
-        [167, 341],
-        [189, 316],
-        [211, 323],
-        [232, 273],
-        [255, 228],
-        [277, 194],
-        [299, 144],
-        [321, 119],
-        [343, 94],
-        [365, 78],
-        [387, 64],
-        [409, 63],
-        [431, 51],
-        [453, 69],
-        [476, 95],
-        [497, 138],
-        [519, 190]
-    ]
-
     return fit_data(points, width, height, x_axis_left, x_axis_right,
                     y_axis_bottom, y_axis_top)
 
@@ -219,102 +199,5 @@ def fit_speed_acceleration():
         [596, 378]
     ]
 
-    # points = [
-    #     [38, 192],
-    #     [76, 213],
-    #     [118, 229],
-    #     [159, 238],
-    #     [197, 242],
-    #     [237, 251],
-    #     [277, 257],
-    #     [319, 264],
-    #     [357, 272],
-    #     [400, 298],
-    #     [436, 308],
-    #     [478, 324],
-    #     [516, 340],
-    #     [557, 359],
-    #     [596, 378]
-    # ]
-
     return fit_data(points, width, height, x_axis_left, x_axis_right,
                     y_axis_bottom, y_axis_top, fit_sin_flag=False)
-
-
-# def fit_acceleration():
-#     points = [
-#         [14, 209],
-#         [24, 206],
-#         [34, 224],
-#         [44, 222],
-#         [54, 228],
-#         [64, 222],
-#         [74, 225],
-#         [83, 219],
-#         [93, 218],
-#         [103, 223],
-#         [113, 226],
-#         [123, 225],
-#         [133, 224],
-#         [143, 227],
-#         [153, 218],
-#         [163, 209],
-#         [173, 197],
-#         [183, 187],
-#         [193, 140],
-#         [202, 100],
-#         [212, 167],
-#         [222, 195],
-#         [232, 174],
-#         [242, 153],
-#         [252, 135],
-#         [262, 117],
-#         [272, 111],
-#         [282, 91],
-#         [292, 86],
-#         [302, 81],
-#         [312, 75],
-#         [322, 62],
-#         [332, 61],
-#         [342, 48],
-#         [352, 36],
-#         [361, 41],
-#         [371, 58],
-#         [381, 57],
-#         [391, 69],
-#         [401, 63]
-#     ]
-
-#     width = 406
-#     height = 326
-
-#     x_axis_length = 40
-#     y_axis_length = 3
-
-#     points, xx, yy = reformat_data(points, width, height, x_axis_length, y_axis_length)
-
-#     fig, ax = plt.subplots(1, 1)
-#     ax.set_ylim((-y_axis_length, y_axis_length))
-#     ax.set_xlim((-x_axis_length, x_axis_length))
-
-#     ax.scatter(xx, yy)
-
-#     start = 0
-#     stop = 14
-#     polyfit1 = np.polyfit(xx[:stop], yy[:stop], 2)
-#     poly1 = np.poly1d(polyfit1)
-#     xxfit1 = np.linspace(xx[start], xx[stop - 1], 20)
-#     yyfit1 = poly1(xxfit1)
-#     plt.plot(xx[start:stop - 1], yy[start:stop - 1], 'o', xxfit1, yyfit1)
-
-#     start = 14
-#     stop = 20
-#     polyfit1 = np.polyfit(xx[start:stop], yy[start:stop], 2)
-#     poly1 = np.poly1d(polyfit1)
-#     xxfit1 = np.linspace(xx[start], xx[stop - 1], 20)
-#     yyfit1 = poly1(xxfit1)
-#     plt.plot(xx[start:stop - 1], yy[start:stop - 1], 'o', xxfit1, yyfit1)
-
-#     plt.scatter(xx, yy)
-
-#     return points, xx, yy

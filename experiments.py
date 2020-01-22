@@ -4,17 +4,52 @@ from matplotlib import pyplot as plt
 
 from simulation import headless_simulations
 
+# global for experiment setups
+SETUPS = [
+    # 1:1 - 1 left (bottom), 1 top (right)
+    (1, 1),
 
-def plot_histogram(ax, frequencies, title, bins_n=6):
+    # 2:2 - 2 left (bottom), 2 top (right)
+    (2, 2),
+
+    # 0:1 - 0 left (bottom), 1 top (right)
+    (0, 1),
+
+    # 0:2 - 0 left (bottom), 2 top  (right)
+    (0, 2),
+
+    # 0:3 - 0 left (bottom), 3 top (right)
+    (0, 3),
+
+    # 1:2 - 1 left (bottom), 2 top (right)
+    (1, 2),
+
+    # 1:3 - 1 left (bottom), 3 top (right)
+    (1, 3)
+]
+
+
+def plot_histogram(ax, frequencies, title, bins_n=6, original_frequencies=None):
     # TODO frequency should be from 0 to 1?
 
     # create 5 bins from 0 to 1
     bins = np.linspace(0, 1, bins_n)
 
+    # if original_frequencies:
+    #     weights_original = np.ones_like(original_frequencies) / len(original_frequencies)
+    #     ax.hist(original_frequencies, bins, weights=weights_original,
+    #             color='gray', alpha=0.5)
+
     # calculate weight so all histograms would sum to 1
     weights = np.ones_like(frequencies) / len(frequencies)
+    # ax.hist(frequencies, bins, weights=weights, rwidth=0.8)
+    ax.hist(frequencies, bins, weights=weights, rwidth=0.8)
 
-    ax.hist(frequencies, bins, weights=weights)
+    if original_frequencies:
+        weights_original = np.ones_like(original_frequencies) / len(original_frequencies)
+        ax.hist(original_frequencies, bins, weights=weights_original,
+                color='silver', alpha=0.8, rwidth=0.4)
+
     ax.set_xticks(bins)
     ax.set_ylim((0, 1))
     ax.set_xlabel('Proportion going right')
@@ -30,12 +65,12 @@ def run_experiment(shoals=30, fishes=2, replicas_top=0, replicas_bottom=0):
     fig, ax = plt.subplots(1, 1, constrained_layout=True)
     plot_histogram(ax,
                    frequencies,
-                   f'{replicas_top}: {replicas_bottom}, group size {fishes}')
+                   f'{replicas_bottom}: {replicas_top}, group size {fishes}')
     fig.show()
     return frequencies
 
 
-def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0):
+def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0, original_frequencies=None):
     """ 
     run %shoals experiments 
     for given number %replicas_top and %replicas_bottom
@@ -56,51 +91,18 @@ def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0):
 
         all_frequencies.append(frequencies)
 
-    fig, ax = plt.subplots(1, 3, constrained_layout=True)
-
-    # plotting histogram apart as it seams to consume memory and crash
-    for i in range(len(group_sizes)):
-        plot_histogram(ax[i],
-                       all_frequencies[i],
-                       f'{replicas_top}:{replicas_bottom}, group size {group_sizes[i]}')
-
-    fig.show()
-
     print('all frequencies:', all_frequencies)
 
     return all_frequencies
+
 
 def run_set(shoals=30):
     start = time.time()
 
     results = []
-    # 1:1 - 1 bottom, 1 top
-    r = run_experiments(shoals=shoals, replicas_bottom=1, replicas_top=1)
-    results.append(r)
-
-    # 2:2 - 2 bottom, 2 top
-    r = run_experiments(shoals=shoals, replicas_bottom=2, replicas_top=2)
-    results.append(r)
-    
-    # 0:1 - 0 bottom, 1 top
-    r = run_experiments(shoals=shoals, replicas_bottom=0, replicas_top=1)
-    results.append(r)
-
-    # 0:2 - 0 bottom, 2 top 
-    r = run_experiments(shoals=shoals, replicas_bottom=-0, replicas_top=2)
-    results.append(r)
-    
-    # 0:3 - 0 bottom, 3 top
-    r = run_experiments(shoals=shoals, replicas_bottom=0, replicas_top=3)
-    results.append(r)
-    
-    # 1:2 - 1 bottom, 2 top
-    r = run_experiments(shoals=shoals, replicas_bottom=1, replicas_top=2)
-    results.append(r)
-    
-    # 1:3 - 1 bottom, 2 top
-    r = run_experiments(shoals=shoals, replicas_bottom=1, replicas_top=2)
-    results.append(r)
+    for setup in SETUPS:
+        r = run_experiments(shoals=shoals, replicas_bottom=setup[0], replicas_top=setup[1])
+        results.append(r)
 
     end = time.time()
     print(f'\n all sets time: {end - start:.2f}')
