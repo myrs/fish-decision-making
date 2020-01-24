@@ -8,21 +8,17 @@ from utils import random_trunc
 class Fish():
 
     def __init__(self, x, y, width, height, shaded_area_x, replica_final_y=80,
-                 replica=False, decision_x=None):
+                 replica=False, decision_x=None, follow_refugia_force=None):
         self.position = Vector(x, y)
         self.replica = replica
         self.decision_x = decision_x
         self.decision = None
         self.reached_shaded_area = False
         self.shaded_area_x = shaded_area_x
+        self.follow_refugia_force = follow_refugia_force
 
-        self.second_neighbor_turn_coefficient = 0.25
-        self.second_neighbor_accelerate_coefficient = 0.25
-
-        # self.second_neighbor_turn_coefficient = 0.5
-        # self.second_neighbor_accelerate_coefficient = 0.5
-
-        self.rest_counter = 0
+        self.second_neighbor_turn_coefficient = 0.2
+        self.second_neighbor_accelerate_coefficient = 0.2
 
         vec = (np.random.rand(2) - 0.5) * 10
         if not replica:
@@ -72,24 +68,11 @@ class Fish():
         if self.position.x < self.shaded_area_x:
             self.reached_shaded_area = True
             print('fish reached shaded area!')
+            # put fish inside the shaded area
             self.velocity = Vector(0, 0)
             self.position.x = 10
             self.position.y = 10 if self.position.y < self.height / 2 else self.height - 10
-            # make it move reeeeal slow in direction to wall
-            # setting vector to 0 would lead to division errors (maybe)
 
-            return
-
-        # if np.random.random() > 0.99:
-        if np.random.random() > 1:
-            self.velocity = self.velocity.normalize()
-            self.rest_counter = int(np.random.random() * 20)
-            print(f'set rest counter to {self.rest_counter}')
-            # return
-
-        if self.rest_counter:
-            self.rest_counter -= 1
-            self.position += self.velocity
             return
 
         self.set_closest_neighbors(fishes)
@@ -112,24 +95,16 @@ class Fish():
         else:
             left_border_vector = Vector(0, 720)
 
-        # left_border_vector = Vector(0, self.height / 2)
+        if self.follow_refugia_force:
+            direction_to_border = left_border_vector - self.position
+            angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
+            left_wall_attraction = self.get_turning_angle(angle)
 
-        direction_to_border = left_border_vector - self.position
-        angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
-        left_wall_attraction = self.get_turning_angle(angle)
-
-        turning_angle += left_wall_attraction
+            turning_angle += left_wall_attraction * self.follow_refugia_force
 
         # if there are no neighbors
-        if turning_angle == 0:
-            # turn to the direction of border
-            # left_border_vector = Vector(0, self.height / 2)
-            # direction_to_border = left_border_vector - self.position
-            # angle = self.get_angle_normalized(self.velocity.angle, direction_to_border.angle)
-            # turning_angle = self.get_turning_angle(angle)
-
+        elif turning_angle == 0:
             # turn a little bit randomly
-            # Original - random angle
             turning_angle = random_trunc(mean=0, sd=0.4, low=-10, upp=10)
 
         # change fish direction,
@@ -238,10 +213,11 @@ class Fish():
         # put it in sinus function
         # result = 0.5091 * np.sin(0.9987 * angle + 0.0071) - 0.0519
         # result = 0.49 * np.sin(0.97 * angle) - 0.06
-        # result = 0.51 * np.sin(angle + 0.01) - 0.05
         # $-0.49 \\cdot \\sin (0.97 \\cdot x + 0.00) + -0.06
         # turning_angle = 0.49 * np.sin(0.97 * angle) - 0.06
-        turning_angle = 0.49 * np.sin(0.97 * angle)
+        # turning_angle = 0.49 * np.sin(0.97 * angle)
+        # turning_angle = 0.51 * np.sin(angle + 0.01) - 0.05
+        turning_angle = 0.51 * np.sin(angle + 0.01)
 
         turning_angle = random_trunc(mean=turning_angle, sd=0.1,
                                      low=turning_angle - 0.4, upp=turning_angle + 0.4)
@@ -255,15 +231,15 @@ class Fish():
         if neighbor is None:
             return 0
 
-        angle = self.get_angle_with_neighbor(neighbor)
         turning_angle = 0
+        
+        angle = self.get_angle_with_neighbor(neighbor)
+        distance = self.position.distance(neighbor.position)
 
-        # print(self.position.distance(neighbor.position))
-
-        # set to 60
-        if self.position.distance(neighbor.position) < 100:
+        if distance < 100:
             turning_angle = self.get_turning_angle(angle)
-            if self.position.distance(neighbor.position) > 60:
+
+            if distance > 50:
                 # half strength if fish is far away
                 turning_angle = turning_angle * 0.5
 
@@ -296,54 +272,25 @@ class Fish():
 
         # cases:
         # 1. Strong attraction
-        # -- when fish closer than 23.5 centimeters
-        # -- and further, than 7.9 centimeters
-        if distance_to_neighbor <= 100 and distance_to_neighbor > 8:
-            # if is_close_enough and distance_to_neighbor > 9:
-            # if is_close_enough and distance_to_neighbor > 7.9:
+        if distance_to_neighbor > 10 and distance_to_neighbor <= 100:
             # 1.1. If neighbor in front - accelerate towards it
             if neighbor_in_front:
-                # print('acceleration far')
-                acceleration = 0
-                # acceleration = 1
-
                 if distance_to_neighbor > 25:
-                    acceleration = random_trunc(mean=2, sd=0.2, low=1.5, upp=2.5)
-                elif distance_to_neighbor > 10:
-                    acceleration = random_trunc(mean=1.5, sd=0.25, low=0.5, upp=1.5)
+                    acceleration = random_trunc(mean=2, sd=0.25, low=1.5, upp=2.5)
                 else:
-                    acceleration = random_trunc(mean=0.5, sd=0.25, low=0, upp=1)
+                    acceleration = random_trunc(mean=1.5, sd=0.25, low=0.5, upp=1.5)
 
             # 1.1. If neighbor in behind - decelerate
             else:
-                # print('decelerate far')
-                # print('decelerate')
-                # acceleration = -1.2
-                # acceleration = 0
                 acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
 
         # 2. Strong repulsion (when fish closer than 4.06 centimeters)
-        # elif distance_to_neighbor < 4.06:
         elif distance_to_neighbor < 6:
             if neighbor_in_front:
-                # print('decelerate close')
-                # acceleration = -4
-                # acceleration = 0
                 acceleration = random_trunc(mean=-1, sd=0.25, low=-1.5, upp=-0.5)
-                # acceleration =
-                # print(acceleration)
-
-                # acceleration = -0.8
 
             # accelerate a little bit if there's someone directly behind us
             else:
-                # print('acceleration close')
-                # pass
-                # acceleration = 0.4
-                # acceleration = 2
-                # acceleration = random_trunc(mean=0.5, sd=0.3, low=0.2, upp=1.2)
-                # print('behind acceleration')
-                # acceleration = 0
                 acceleration = random_trunc(mean=2, sd=0.25, low=1.5, upp=2.5)
 
         # 3. When fish is between 4.06 and 7.9 - do nothing
@@ -411,19 +358,23 @@ class Fish():
         walls_acceleration = 0
         distance = 15
 
+        # get edge vector considering maximum reaction distance
+        # of 15 centimeters
         edge_vector = self.get_edge_vector(distance=distance)
         angle = edge_vector.angle_between(self.velocity)
+
 
         # close to the wall
         if edge_vector.magnitude:
             # is in "escaping the wall" mode
             # when angle between fish and wall is small
             if np.pi / 2 - np.pi / 6 < angle < np.pi / 2 + np.pi / 6:
-                walls_acceleration = random_trunc(mean=1.5, sd=0.5, low=0, upp=3)
+                walls_acceleration = random_trunc(mean=2, sd=0.5, low=1, upp=3)
                 # walls_acceleration = 1
-            # is approaching the wall
-            else:
-                walls_acceleration = -0.5
+            
+            # approaching to the wall
+            elif angle > np.pi / 2 or angle < -np.pi / 2:
+                walls_acceleration = random_trunc(mean=-0.5, sd=0.1, low=-1, upp=0)
 
         return walls_acceleration
 

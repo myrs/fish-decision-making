@@ -3,64 +3,15 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from simulation import headless_simulations
-
-# global for experiment setups
-SETUPS = [
-    # 1:1 - 1 left (bottom), 1 top (right)
-    (1, 1),
-
-    # 2:2 - 2 left (bottom), 2 top (right)
-    (2, 2),
-
-    # 0:1 - 0 left (bottom), 1 top (right)
-    (0, 1),
-
-    # 0:2 - 0 left (bottom), 2 top  (right)
-    (0, 2),
-
-    # 0:3 - 0 left (bottom), 3 top (right)
-    (0, 3),
-
-    # 1:2 - 1 left (bottom), 2 top (right)
-    (1, 2),
-
-    # 1:3 - 1 left (bottom), 3 top (right)
-    (1, 3)
-]
+from plots import plot_histogram
+from experimental_setups import SETUPS
 
 
-def plot_histogram(ax, frequencies, title, bins_n=6, original_frequencies=None):
-    # TODO frequency should be from 0 to 1?
-
-    # create 5 bins from 0 to 1
-    bins = np.linspace(0, 1, bins_n)
-
-    # if original_frequencies:
-    #     weights_original = np.ones_like(original_frequencies) / len(original_frequencies)
-    #     ax.hist(original_frequencies, bins, weights=weights_original,
-    #             color='gray', alpha=0.5)
-
-    # calculate weight so all histograms would sum to 1
-    weights = np.ones_like(frequencies) / len(frequencies)
-    # ax.hist(frequencies, bins, weights=weights, rwidth=0.8)
-    ax.hist(frequencies, bins, weights=weights, rwidth=0.8)
-
-    if original_frequencies:
-        weights_original = np.ones_like(original_frequencies) / len(original_frequencies)
-        ax.hist(original_frequencies, bins, weights=weights_original,
-                color='silver', alpha=0.8, rwidth=0.4)
-
-    ax.set_xticks(bins)
-    ax.set_ylim((0, 1))
-    ax.set_xlabel('Proportion going right')
-    ax.set_ylabel('Frequency')
-    ax.set_title(title)
-
-
-def run_experiment(shoals=30, fishes=2, replicas_top=0, replicas_bottom=0):
+def run_experiment(shoals=30, fishes=2, replicas_top=0, replicas_bottom=0, follow_refugia_force=0.2):
     frequencies = headless_simulations(shoals, fishes=fishes,
                                        replicas_top=replicas_top,
-                                       replicas_bottom=replicas_bottom)
+                                       replicas_bottom=replicas_bottom,
+                                       follow_refugia_force=follow_refugia_force)
 
     fig, ax = plt.subplots(1, 1, constrained_layout=True)
     plot_histogram(ax,
@@ -70,7 +21,7 @@ def run_experiment(shoals=30, fishes=2, replicas_top=0, replicas_bottom=0):
     return frequencies
 
 
-def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0, original_frequencies=None):
+def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0, follow_refugia_force=0.2):
     """ 
     run %shoals experiments 
     for given number %replicas_top and %replicas_bottom
@@ -87,7 +38,8 @@ def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0, original_frequ
 
         frequencies = headless_simulations(shoals, fishes=group_size,
                                            replicas_top=replicas_top,
-                                           replicas_bottom=replicas_bottom)
+                                           replicas_bottom=replicas_bottom,
+                                           follow_refugia_force=follow_refugia_force)
 
         all_frequencies.append(frequencies)
 
@@ -96,12 +48,13 @@ def run_experiments(shoals=30, replicas_top=0, replicas_bottom=0, original_frequ
     return all_frequencies
 
 
-def run_set(shoals=30):
+def run_set(shoals=30, follow_refugia_force=0.2):
     start = time.time()
 
     results = []
     for setup in SETUPS:
-        r = run_experiments(shoals=shoals, replicas_bottom=setup[0], replicas_top=setup[1])
+        r = run_experiments(shoals=shoals, replicas_bottom=setup[0], replicas_top=setup[1], 
+            follow_refugia_force=follow_refugia_force)
         results.append(r)
 
     end = time.time()

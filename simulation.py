@@ -8,7 +8,7 @@ from fish import Fish
 
 class Simulation:
 
-    def __init__(self, fishes=4, replicas_top=0, replicas_bottom=0):
+    def __init__(self, fishes=4, replicas_top=0, replicas_bottom=0, follow_refugia_force=None):
         self.width = 1500
         # self.width = 1300
         self.height = 800
@@ -20,8 +20,10 @@ class Simulation:
         self.box_top = 335
 
         self.fishes = fishes
+        self.follow_refugia_force = follow_refugia_force
         self.replicas_top = replicas_top
 
+        # replica outside
         # self.replica_initial_y_top = 320
         # self.replica_initial_y_bottom = 480
         # self.replica_final_y_top = 80
@@ -41,7 +43,8 @@ class Simulation:
         self.shoal = [Fish(self.get_starting_x(),
                            self.get_starting_y(),
                            self.width, self.height, self.shaded_area_x,
-                           decision_x=self.decision_x)
+                           decision_x=self.decision_x,
+                           follow_refugia_force=follow_refugia_force)
                       for _ in range(fishes)]
 
         self.replica_y_start = self.box_top + self.box_width / 2
@@ -72,10 +75,15 @@ class Simulation:
         self.shoal.append(replica)
 
     def get_replica_x(self, replica_id):
+        # outside
         # return self.width - 10 - replica_id * 15
+        # inside
         return self.width - self.box_padding_left - self.box_width / 2 - replica_id * 15
 
     def get_replica_y(self, x, position):
+        # outside
+        # x_initial = self.width
+        # inside
         x_initial = self.width - self.box_padding_left - self.box_width / 2
 
         if position == 'top':
@@ -155,10 +163,10 @@ def draw():
     simulation.run_step()
 
 
-def headless_simulation(fishes=2, replicas_top=0, replicas_bottom=0):
+def headless_simulation(fishes=2, replicas_top=0, replicas_bottom=0, follow_refugia_force=0.2):
     start = time.time()
     simulation = Simulation(fishes=fishes, replicas_top=replicas_top,
-                            replicas_bottom=replicas_bottom)
+                            replicas_bottom=replicas_bottom, follow_refugia_force=follow_refugia_force)
 
     all_dicided = False
     step = 0
@@ -175,13 +183,14 @@ def headless_simulation(fishes=2, replicas_top=0, replicas_bottom=0):
     return top, bottom
 
 
-def headless_simulations(shoals=20, fishes=2, replicas_top=0, replicas_bottom=0):
+def headless_simulations(shoals=20, fishes=2, replicas_top=0, replicas_bottom=0, follow_refugia_force=0.2):
     top_preference_proportions = []
 
     for i in range(shoals):
         print(f'\n\nShoal {i + 1} of {shoals}')
         top, bottom = headless_simulation(fishes=fishes, replicas_top=replicas_top,
-                                          replicas_bottom=replicas_bottom)
+                                          replicas_bottom=replicas_bottom,
+                                          follow_refugia_force=follow_refugia_force)
         top_preference_proportion = top / fishes
         top_preference_proportions.append(top_preference_proportion)
 
