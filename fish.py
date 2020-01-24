@@ -201,7 +201,7 @@ class Fish():
 
     def get_angle_with_neighbor(self, neighbor):
         """calculates angle between fish and it's closest neighbor"""
-        # first, calculate vector, pointing to the closes fish
+        # first, calculate vector, pointing to the closest fish
         # it's a vector, connecting both fish positions
         direction_to_neighbor = neighbor.position - self.position
         # calculate angle as angle between fish velocity vector and
@@ -210,12 +210,7 @@ class Fish():
         return self.get_angle_normalized(self.velocity.angle, direction_to_neighbor.angle)
 
     def get_turning_angle(self, angle):
-        # put it in sinus function
-        # result = 0.5091 * np.sin(0.9987 * angle + 0.0071) - 0.0519
-        # result = 0.49 * np.sin(0.97 * angle) - 0.06
-        # $-0.49 \\cdot \\sin (0.97 \\cdot x + 0.00) + -0.06
-        # turning_angle = 0.49 * np.sin(0.97 * angle) - 0.06
-        # turning_angle = 0.49 * np.sin(0.97 * angle)
+        # add rotation
         # turning_angle = 0.51 * np.sin(angle + 0.01) - 0.05
         turning_angle = 0.51 * np.sin(angle + 0.01)
 
@@ -247,10 +242,8 @@ class Fish():
         return turning_angle * coefficient
 
     def get_acceleration_for_neighbor(self, neighbor, coefficient=1):
-        """calculate acceleration defined by the closes neighbor"""
-        # first, get distance to the closes neighbor
-        # distance_to_neighbor = np.linalg.norm(
-        # self.first_closest.position - self.position)
+        """calculate acceleration defined by the closest neighbor"""
+        # first, get distance to the closest neighbor
         if neighbor is None:
             return 0
 
@@ -313,18 +306,6 @@ class Fish():
             # skip self!
             if self == neighbor:
                 continue
-
-            # distance = self.position.distance(neighbor.position)
-            # if distance < closest_distance:
-            #     second_closest = first_closest
-            #     second_closest_distance = closest_distance
-
-            #     closest_distance = distance
-            #     first_closest = neighbor
-
-            # elif distance < second_closest_distance:
-            #     second_closest = neighbor
-            #     second_closest_distance = distance
 
             # we should be able to see this neighbor!
             # as fish vision is not 360 degrees

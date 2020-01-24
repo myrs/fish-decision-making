@@ -22,18 +22,21 @@ to install python libraries, used in this project.
 
 ## Running simulations with UI
 To run simulation with basic parameters (2 fishes, no replicas), run 
-```python3 main.py```
+```python3 simulation.py```
 
 The following parameters can be used:
 ```
 -f (--fishes) - number of fishes
--r (--replicas) - number of replicas
+-t (--replicas-top) - number of replicas on top 
+-b (--replicas-bottom) - number of replicas in the bottom
+-r (--free-run) - free run mode, with no experimental setup
 ```
 To run with parameters, specify them in command line e.g.:
 
 ```
-python3 main.py --fishes=4 --replicas=2 \\ run with 4 fishes and 2 replicas
-python3 main.py --fishes=8 \\ run with 8 fishes (2 replicas will be set by default)
+python3 simulation.py --fishes=4 --replicas=2 \\ run with 4 fishes and 2 replicas
+python3 simulation.py --fishes=8 \\ run with 8 fishes (2 replicas will be set by default)
+python3 simulation.py -r=1 \\ run in free run mode (no experimental set)
 ```
 
 ## Running simulations from python console

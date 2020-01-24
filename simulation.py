@@ -8,10 +8,17 @@ from fish import Fish
 
 class Simulation:
 
-    def __init__(self, fishes=4, replicas_top=0, replicas_bottom=0, follow_refugia_force=None):
-        self.width = 1500
-        # self.width = 1300
-        self.height = 800
+    def __init__(self, fishes=4, replicas_top=0, replicas_bottom=0, follow_refugia_force=None,
+                 free_run=False):
+
+        self.free_run = free_run
+
+        if not free_run:
+            self.width = 1500
+            self.height = 800
+        else:
+            self.width = 730
+            self.height = 730
 
         # box parameters
         self.box_width = 120
@@ -20,14 +27,13 @@ class Simulation:
         self.box_top = 335
 
         self.fishes = fishes
-        self.follow_refugia_force = follow_refugia_force
-        self.replicas_top = replicas_top
+        
+        if free_run:
+            self.follow_refugia_force = 0
+        else:
+            self.follow_refugia_force = follow_refugia_force
 
-        # replica outside
-        # self.replica_initial_y_top = 320
-        # self.replica_initial_y_bottom = 480
-        # self.replica_final_y_top = 80
-        # self.replica_final_y_bottom = 720
+        self.replicas_top = replicas_top
 
         # replica inside
         self.replica_initial_y_top = self.box_top + 20
@@ -36,9 +42,19 @@ class Simulation:
         self.replica_final_y_bottom = 720
 
         # decision line position
-        self.decision_x = 520
+        if not self.free_run:
+            self.decision_x = 520
+        else:
+            # if will just never get there
+            self.decision_x = - 100
+
         # shaded area position
-        self.shaded_area_x = 280
+        if not self.free_run:
+            self.shaded_area_x = 280
+        else:
+            # if will just never get there
+            print('settt')
+            self.shaded_area_x = - 100
 
         self.shoal = [Fish(self.get_starting_x(),
                            self.get_starting_y(),
@@ -63,11 +79,6 @@ class Simulation:
         y = self.get_replica_y(x, position)
 
         final_y = self.get_replica_y(0, position)
-        # if position == 'top':
-        #     final_y = self.replica_final_y_top
-        # else:
-        #     final_y = self.replica_final_y_bottom
-
         self.replicas_coordinates.append((x, y, final_y))
 
         replica = Fish(x, y, self.width, self.height, self.shaded_area_x,
@@ -75,14 +86,10 @@ class Simulation:
         self.shoal.append(replica)
 
     def get_replica_x(self, replica_id):
-        # outside
-        # return self.width - 10 - replica_id * 15
         # inside
         return self.width - self.box_padding_left - self.box_width / 2 - replica_id * 15
 
     def get_replica_y(self, x, position):
-        # outside
-        # x_initial = self.width
         # inside
         x_initial = self.width - self.box_padding_left - self.box_width / 2
 
@@ -105,6 +112,10 @@ class Simulation:
 
         # triangle((0, 0), (0, 200), (350, 100))
         background(30, 30, 47)
+
+        # don't paint obstacles for free run
+        if self.free_run:
+            return
 
         fill(50)
         # shaded are upper quadrant
@@ -202,13 +213,17 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--fishes", dest="fishes",
                         nargs='?', const=2, type=int, default=2,
                         help="define how many fishes will be used in simulation (default = 2)")
-    parser.add_argument("-t", "--replicas_top", dest="replicas_top",
+    parser.add_argument("-t", "--replicas-top", dest="replicas_top",
                         nargs='?', const=0, type=int, default=0,
                         help="define how many replicas_top will go top (default = 0)")
 
-    parser.add_argument("-b", "--replicas_bottom", dest="replicas_bottom",
+    parser.add_argument("-b", "--replicas-bottom", dest="replicas_bottom",
                         nargs='?', const=0, type=int, default=0,
                         help="define how many replicas_bottom will go bottom (default = 0)")
+
+    parser.add_argument("-r", "--free-run", dest="free_run",
+                        nargs='?', const=False, type=bool, default=False,
+                        help="define if run in free mode (default=False)")
 
     args = parser.parse_args()
     print(args)
@@ -216,7 +231,8 @@ if __name__ == '__main__':
 
     simulation = Simulation(fishes=args.fishes,
                             replicas_top=args.replicas_top,
-                            replicas_bottom=args.replicas_bottom)
+                            replicas_bottom=args.replicas_bottom,
+                            free_run=args.free_run)
 
     run()
     # run(frame_rate=25)

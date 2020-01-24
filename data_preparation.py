@@ -50,11 +50,6 @@ def fit_tan(tt, yy):
     return {"amp": A, "omega": w, "phase": p, "offset": c, "freq": f, "period": 1. / f, "fitfunc": fitfunc, "maxcov": np.max(pcov), "rawres": (guess, popt, pcov), "verbose": verbose}
 
 
-# def resize_x(x, width, x_axis_length):
-#     full_x_axis_length = 2 * x_axis_length
-#     x_resize = full_x_axis_length / width
-#     return x * x_resize - x_axis_length
-
 def resize_y(y, height, y_axis_bottom, y_axis_top):
     y = height - y
     full_y_axis_length = y_axis_top - y_axis_bottom
@@ -66,12 +61,6 @@ def resize_x(x, width, x_axis_left, x_axis_right):
     full_x_axis_length = x_axis_right - x_axis_left
     x_resize = full_x_axis_length / width
     return x * x_resize + x_axis_left
-
-# def resize_y(y, height, y_axis_length):
-#     y = height - y
-#     fill_y_axis_length = 2 * y_axis_length
-#     y_resize = fill_y_axis_length / height
-#     return y * y_resize - y_axis_length
 
 
 def reformat_data(points, width, height, x_axis_right, x_axis_left,
@@ -108,7 +97,7 @@ def fit_data(points, width, height, x_axis_left, x_axis_right,
         ax.xaxis.set_major_formatter(FuncFormatter(
             lambda val, pos: '{:.0g}$\pi$'.format(val / np.pi) if val != 0 else '0'
         ))
-        ax.xaxis.set_major_locator(MultipleLocator(base=np.pi / 4))        
+        ax.xaxis.set_major_locator(MultipleLocator(base=np.pi / 4))
 
         fit_sin_params = fit_sin(xx, yy)
         print("Amplitude=%(amp)s, Angular freq.=%(omega)s, phase=%(phase)s, offset=%(offset)s, Max. Cov.=%(maxcov)s" % fit_sin_params)
