@@ -44,7 +44,7 @@ You can use `python` (or `ipython`) to run simulation from console
 
 In this case UI will not be triggered, simulations run faster and finish when all fishes make their decisions
 
-Function `main.headless_simulation` receives two key parameters: `fishes` and `replicas`. It returns a tuple with number of fishes, that selected top and fishes, that selected bottom.
+Function `main.headless_simulation` receives three key parameters: `fishes`, `replicas_top` and `replicas_bottom`. It returns a tuple with number of fishes, that selected top and fishes, that selected bottom.
 
-Function `main.headless_simulations` receives three key parameters: `shoals` (NB: the same as times simulation will run), `fishes` and `replicas`. 
+Function `main.headless_simulations` receives four key parameters: `shoals` (NB: the same as times simulation will run), `fishes`, `replicas_top` and `replicas_bottom`. 
 It returns a tuple, where each element corresponds to one shoal and it's value is a proportion of fishes, that went top.
