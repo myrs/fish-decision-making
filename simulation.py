@@ -53,7 +53,6 @@ class Simulation:
             self.shaded_area_x = 280
         else:
             # if will just never get there
-            print('settt')
             self.shaded_area_x = - 100
 
         self.shoal = [Fish(self.get_starting_x(),
